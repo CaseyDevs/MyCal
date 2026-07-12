@@ -19,6 +19,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\MyCal.ApiService\MyCal.ApiService.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\MyCal.AppHost\MyCal.AppHost.csproj" />
   </ItemGroup>
 
