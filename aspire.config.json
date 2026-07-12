@@ -1,0 +1,6 @@
+{
+  "appHost": {
+    "path": "MyCal.AppHost/MyCal.AppHost.csproj"
+  },
+  "channel": "stable"
+}
