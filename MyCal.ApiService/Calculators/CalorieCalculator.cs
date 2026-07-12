@@ -1,5 +1,6 @@
 using MyCal.ApiService.Common.Enum;
 using MyCal.ApiService.Common.Model;
+using MyCal.ApiService.Common.Record;
 
 namespace MyCal.ApiService.Calculators;
 
@@ -41,5 +42,52 @@ public static class CalorieCalculator
         };
 
         return CalculateBmr(user) * multiplier;
-    }    
+    }
+
+    /// <summary>
+    /// Calculates the target calories based on the user's maintenance calories, goal type, and goal pace.
+    /// </summary>
+    /// <param name="user"></param>
+    /// <param name="goal"></param>
+    /// <param name="pace"></param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentOutOfRangeException"></exception>
+    public static CalorieGoalResult CalculateGoalCalories(
+        User user,
+        GoalPace pace)
+    {
+        var maintenance = CalculateMaintenanceCalories(user);
+        var goal = DetermineGoalType(user);
+
+        var percentage = pace switch
+        {
+            GoalPace.Slow => 0.10,
+            GoalPace.Moderate => 0.15,
+            GoalPace.Fast => 0.20,
+            _ => throw new ArgumentOutOfRangeException(nameof(pace))
+        };
+
+        var adjustment = goal switch
+        {
+            GoalType.LoseWeight => -(maintenance * percentage), 
+            GoalType.MaintainWeight => 0,
+            GoalType.GainWeight => maintenance * percentage,
+            _ => throw new ArgumentOutOfRangeException(nameof(goal))
+        };
+
+        var targetCalories = maintenance + adjustment;
+
+        return new CalorieGoalResult(
+            MaintenanceCalories: maintenance,
+            DailyAdjustment: adjustment,
+            TargetCalories: targetCalories);
+    }
+ 
+    // Determines the goal type based on the user's current weight and weight goal.
+    public static GoalType DetermineGoalType(User user) => user.WeightGoal switch
+    {
+        var goal when goal < user.WeightInKg => GoalType.LoseWeight,
+        var goal when goal > user.WeightInKg => GoalType.GainWeight,
+        _ => GoalType.MaintainWeight
+    };
 }

@@ -35,4 +35,37 @@ public class CalorieCalculatorTests
         // Assert: BMR = 1,730; maintenance = 1,730 * 1.2.
         Assert.AreEqual(expectedResult, result);
     }
+
+    [TestMethod]
+    public void CalculateGoalCalories_LoseWeightModerate_ReturnsExpectedValue()
+    {
+        // Arrange
+        user.WeightGoal = 70; // target weight
+        var pace = GoalPace.Moderate;
+
+        // Act
+        var result = CalorieCalculator.CalculateGoalCalories(user, pace);
+
+        // Assert
+        var diff = CalorieCalculator.CalculateMaintenanceCalories(user) + result.DailyAdjustment;
+
+        Assert.AreEqual(result.TargetCalories, diff);
+    }
+
+    [TestMethod]
+    public void CalculateGoalCalories_GainWeightModerate_ReturnsExpectedValue()
+    {
+        // Arrange
+        user.WeightGoal = 80; // target weight
+        var pace = GoalPace.Moderate;
+
+        // Act
+        var result = CalorieCalculator.CalculateGoalCalories(user, pace);
+
+        // Assert
+        var diff = CalorieCalculator.CalculateMaintenanceCalories(user) + result.DailyAdjustment;
+
+        Assert.AreEqual(result.TargetCalories, diff);
+        Console.WriteLine($"Target Calories: {result.TargetCalories}, Daily Adjustment: {result.DailyAdjustment}");
+    }
 }
