@@ -8,5 +8,5 @@ public class AppDbContext : DbContext
     {
     }
 
-    // todo: add dbset
+    DbSet<Common.Model.User> Users => Set<Common.Model.User>();
 }

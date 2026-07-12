@@ -5,6 +5,12 @@ namespace MyCal.ApiService.Calculators;
 
 public static class CalorieCalculator
 {
+    /// <summary>
+    /// Calculates the Basal Metabolic Rate (BMR) based on the user's properties.
+    /// </summary>
+    /// <param name="user"></param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentOutOfRangeException"></exception>
     public static double CalculateBmr(User user) => user.Gender switch
     {
         Gender.Male =>
@@ -16,6 +22,12 @@ public static class CalorieCalculator
         _ => throw new ArgumentOutOfRangeException(nameof(user.Gender))
     };
 
+    /// <summary>
+    /// Calculates the maintenance calories based on the user's BMR and activity level.
+    /// </summary>
+    /// <param name="user"></param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentOutOfRangeException"></exception>
     public static double CalculateMaintenanceCalories(User user)
     {
         var multiplier = user.ActivityLevel switch
@@ -29,5 +41,5 @@ public static class CalorieCalculator
         };
 
         return CalculateBmr(user) * multiplier;
-    }
+    }    
 }
