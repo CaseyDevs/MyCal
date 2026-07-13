@@ -8,5 +8,5 @@ public class AppDbContext : DbContext
     {
     }
 
-    DbSet<Common.Model.User> Users => Set<Common.Model.User>();
+    public DbSet<Common.Model.User> Users => Set<Common.Model.User>();
 }

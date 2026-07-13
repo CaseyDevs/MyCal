@@ -1,5 +1,8 @@
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using MyCal.ApiService.Data;
+using MyCal.ApiService.Endpoints;
+using MyCal.ApiService.Validator;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,6 +11,7 @@ builder.AddServiceDefaults();
 
 // Add services to the container.
 builder.Services.AddProblemDetails();
+builder.Services.AddValidatorsFromAssemblyContaining<ProfileRequestValidator>();
 
 
 builder.AddNpgsqlDbContext<AppDbContext>("postgresdb");
@@ -24,6 +28,7 @@ using (var scope = app.Services.CreateScope())
 app.UseExceptionHandler();
 
 app.MapGet("/", () => "API service is running.");
+app.MapProfileEndpoints();
 
 app.MapDefaultEndpoints();
 
