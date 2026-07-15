@@ -3,7 +3,7 @@ using MyCal.ApiService.Common.Enum;
 namespace MyCal.ApiService.Features.Users.CreateUser;
 
 // This is the command: it describes the data needed to create a user.
-public sealed record CreateUserRequest(
+public sealed record CreateUserCommand(
     string Name,
     string Email,
     double HeightInCm,

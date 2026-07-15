@@ -2,9 +2,9 @@ using FluentValidation;
 
 namespace MyCal.ApiService.Features.Users.CreateUser;
 
-public sealed class CreateUserRequestValidator : AbstractValidator<CreateUserRequest>
+public sealed class CreateUserCommandValidator : AbstractValidator<CreateUserCommand>
 {
-    public CreateUserRequestValidator()
+    public CreateUserCommandValidator()
     {
         RuleFor(user => user.Name).NotEmpty().MaximumLength(100);
         RuleFor(user => user.Email).NotEmpty().EmailAddress();

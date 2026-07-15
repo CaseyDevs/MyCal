@@ -1,4 +1,6 @@
 using FluentValidation;
+using MyCal.ApiService.Abstractions;
+using MyCal.ApiService.Features.Users;
 using MyCal.ApiService.Features.Users.CreateUser;
 using MyCal.ApiService.Features.Users.GetUserById;
 using MyCal.ApiService.Features.Users.GetUsers;
@@ -7,36 +9,38 @@ namespace MyCal.ApiService.Endpoints;
 
 public static class UserEndpoints
 {
-    public static RouteGroupBuilder MapUserEndpoints(this RouteGroupBuilder app)
+    public static WebApplication MapUserEndpoints(this WebApplication app)
     {
         var users = app.MapGroup("/users");
 
-        users.MapGet("/", async (GetUsersHandler handler, CancellationToken cancellationToken) =>
-            Results.Ok(await handler.HandleAsync(cancellationToken)));
+        users.MapGet("/", async (
+            IQueryHandler<GetUsersQuery, List<UserResponseDto>> handler,
+            CancellationToken cancellationToken) =>
+                Results.Ok(await handler.HandleAsync(new GetUsersQuery(), cancellationToken)));
 
         users.MapGet("/{id:int}", async (
             int id,
-            GetUserByIdHandler handler,
+            IQueryHandler<GetUserByIdQuery, UserResponseDto?> handler,
             CancellationToken cancellationToken) =>
         {
-            var user = await handler.HandleAsync(new GetUserByIdRequest(id), cancellationToken);
+            var user = await handler.HandleAsync(new GetUserByIdQuery(id), cancellationToken);
             return user is null ? Results.NotFound() : Results.Ok(user);
         });
 
         users.MapPost("/", async (
-            CreateUserRequest request,
-            IValidator<CreateUserRequest> validator,
-            CreateUserHandler handler,
+            CreateUserCommand command,
+            IValidator<CreateUserCommand> validator,
+            ICommandHandler<CreateUserCommand, CreateUserResult> handler,
             CancellationToken cancellationToken) =>
         {
-            var validation = await validator.ValidateAsync(request, cancellationToken);
+            var validation = await validator.ValidateAsync(command, cancellationToken);
 
             if (!validation.IsValid)
             {
                 return Results.ValidationProblem(validation.ToDictionary());
             }
 
-            var result = await handler.HandleAsync(request, cancellationToken);
+            var result = await handler.HandleAsync(command, cancellationToken);
 
             return result.EmailAlreadyExists
                 ? Results.Conflict(new { message = "An account with this email already exists." })

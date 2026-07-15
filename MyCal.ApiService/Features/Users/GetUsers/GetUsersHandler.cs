@@ -1,11 +1,15 @@
 using Microsoft.EntityFrameworkCore;
+using MyCal.ApiService.Abstractions;
 using MyCal.ApiService.Data;
 
 namespace MyCal.ApiService.Features.Users.GetUsers;
 
 public sealed class GetUsersHandler(AppDbContext context)
+    : IQueryHandler<GetUsersQuery, List<UserResponseDto>>
 {
-    public Task<List<UserResponseDto>> HandleAsync(CancellationToken cancellationToken) =>
+    public Task<List<UserResponseDto>> HandleAsync(
+        GetUsersQuery query,
+        CancellationToken cancellationToken) =>
         context.Users
             .AsNoTracking()
             .Select(user => new UserResponseDto(

@@ -1,16 +1,18 @@
 using Microsoft.EntityFrameworkCore;
+using MyCal.ApiService.Abstractions;
 using MyCal.ApiService.Common.Model;
 using MyCal.ApiService.Data;
 
 namespace MyCal.ApiService.Features.Users.CreateUser;
 
 public sealed class CreateUserHandler(AppDbContext context)
+    : ICommandHandler<CreateUserCommand, CreateUserResult>
 {
     public async Task<CreateUserResult> HandleAsync(
-        CreateUserRequest request,
+        CreateUserCommand command,
         CancellationToken cancellationToken)
     {
-        var normalizedEmail = request.Email.Trim().ToLowerInvariant();
+        var normalizedEmail = command.Email.Trim().ToLowerInvariant();
         var emailExists = await context.Users
             .AsNoTracking()
             .AnyAsync(user => user.Email == normalizedEmail, cancellationToken);
@@ -22,14 +24,14 @@ public sealed class CreateUserHandler(AppDbContext context)
 
         var user = new User
         {
-            Name = request.Name.Trim(),
+            Name = command.Name.Trim(),
             Email = normalizedEmail,
-            HeightInCm = request.HeightInCm,
-            WeightInKg = request.WeightInKg,
-            WeightGoal = request.WeightGoal,
-            Age = request.Age,
-            Gender = request.Gender,
-            ActivityLevel = request.ActivityLevel
+            HeightInCm = command.HeightInCm,
+            WeightInKg = command.WeightInKg,
+            WeightGoal = command.WeightGoal,
+            Age = command.Age,
+            Gender = command.Gender,
+            ActivityLevel = command.ActivityLevel
         };
 
         context.Users.Add(user);
