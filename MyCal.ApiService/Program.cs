@@ -4,6 +4,7 @@ using MyCal.ApiService.Abstractions;
 using MyCal.ApiService.Common.Result;
 using MyCal.ApiService.Data;
 using MyCal.ApiService.Endpoints;
+using MyCal.ApiService.Features.Foods;
 using MyCal.ApiService.Features.Users;
 using MyCal.ApiService.Features.Users.CreateUser;
 using MyCal.ApiService.Features.Users.GetUserById;
@@ -38,6 +39,10 @@ builder.Services.AddScoped<
     IQueryHandler<GetUsersQuery, List<UserResponseDto>>,
     GetUsersHandler>();
 
+builder.Services.AddScoped<
+    IQueryHandler<SearchFoodByTextQuery, IReadOnlyList<FoodSearchResult>>, 
+    SearchFoodByTextHandler>();
+
 builder.AddNpgsqlDbContext<AppDbContext>("postgresdb");
 
 var app = builder.Build();
@@ -53,6 +58,7 @@ app.UseExceptionHandler();
 
 app.MapGet("/", () => "API service is running.");
 app.MapUserEndpoints();
+app.MapFoodEndpoints();
 
 app.MapDefaultEndpoints();
 
