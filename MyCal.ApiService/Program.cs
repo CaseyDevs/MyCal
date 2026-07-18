@@ -1,6 +1,7 @@
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using MyCal.ApiService.Abstractions;
+using MyCal.ApiService.Common.Result;
 using MyCal.ApiService.Data;
 using MyCal.ApiService.Endpoints;
 using MyCal.ApiService.Features.Users;
@@ -18,7 +19,7 @@ builder.Services.AddProblemDetails();
 builder.Services.AddValidatorsFromAssemblyContaining<CreateUserCommandValidator>();
 
 builder.Services.AddScoped<
-    ICommandHandler<CreateUserCommand, CreateUserResult>, 
+    ICommandHandler<CreateUserCommand, Result<UserResponseDto>>, 
     CreateUserHandler>();
 
 builder.Services.AddScoped<
@@ -28,7 +29,6 @@ builder.Services.AddScoped<
 builder.Services.AddScoped<
     IQueryHandler<GetUsersQuery, List<UserResponseDto>>,
     GetUsersHandler>();
-
 
 builder.AddNpgsqlDbContext<AppDbContext>("postgresdb");
 

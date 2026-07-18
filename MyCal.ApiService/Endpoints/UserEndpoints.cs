@@ -1,5 +1,6 @@
 using FluentValidation;
 using MyCal.ApiService.Abstractions;
+using MyCal.ApiService.Common.Result;
 using MyCal.ApiService.Features.Users;
 using MyCal.ApiService.Features.Users.CreateUser;
 using MyCal.ApiService.Features.Users.GetUserById;
@@ -30,7 +31,7 @@ public static class UserEndpoints
         users.MapPost("/", async (
             CreateUserCommand command,
             IValidator<CreateUserCommand> validator,
-            ICommandHandler<CreateUserCommand, CreateUserResult> handler,
+            ICommandHandler<CreateUserCommand, Result<UserResponseDto>> handler,
             CancellationToken cancellationToken) =>
         {
             var validation = await validator.ValidateAsync(command, cancellationToken);
@@ -42,9 +43,23 @@ public static class UserEndpoints
 
             var result = await handler.HandleAsync(command, cancellationToken);
 
-            return result.EmailAlreadyExists
-                ? Results.Conflict(new { message = "An account with this email already exists." })
-                : Results.Created($"/users/{result.User!.Id}", result.User);
+            if (!result.IsSuccess)
+            {
+                return result.ErrorCode switch
+                {
+                    "EmailAlreadyExists" => Results.Conflict(new
+                    {
+                        messsage = result.ErrorMessage
+                    }),
+
+                    _ => Results.BadRequest(new
+                    {
+                        message = result.ErrorMessage
+                    })
+                };
+            }
+
+            return Results.Created($"/users/{result.Data!.Id}", result.Data);
         });
 
         return app;

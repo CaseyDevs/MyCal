@@ -7,10 +7,10 @@ namespace MyCal.ApiService.Features.Users.GetUserById;
 public sealed class GetUserByIdHandler(AppDbContext context)
     : IQueryHandler<GetUserByIdQuery, UserResponseDto?>
 {
-    public Task<UserResponseDto?> HandleAsync(
+    public async Task<UserResponseDto?> HandleAsync(
         GetUserByIdQuery request,
         CancellationToken cancellationToken) =>
-        context.Users
+        await context.Users
             .AsNoTracking()
             .Where(user => user.Id == request.Id)
             .Select(user => new UserResponseDto(

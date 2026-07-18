@@ -7,10 +7,10 @@ namespace MyCal.ApiService.Features.Users.GetUsers;
 public sealed class GetUsersHandler(AppDbContext context)
     : IQueryHandler<GetUsersQuery, List<UserResponseDto>>
 {
-    public Task<List<UserResponseDto>> HandleAsync(
+    public async Task<List<UserResponseDto>> HandleAsync(
         GetUsersQuery query,
         CancellationToken cancellationToken) =>
-        context.Users
+        await context.Users
             .AsNoTracking()
             .Select(user => new UserResponseDto(
                 user.Id, user.Name, user.Email, user.HeightInCm, user.WeightInKg,

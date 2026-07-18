@@ -1,14 +1,15 @@
 using Microsoft.EntityFrameworkCore;
 using MyCal.ApiService.Abstractions;
 using MyCal.ApiService.Common.Model;
+using MyCal.ApiService.Common.Result;
 using MyCal.ApiService.Data;
 
 namespace MyCal.ApiService.Features.Users.CreateUser;
 
 public sealed class CreateUserHandler(AppDbContext context)
-    : ICommandHandler<CreateUserCommand, CreateUserResult>
+    : ICommandHandler<CreateUserCommand, Result<UserResponseDto>>
 {
-    public async Task<CreateUserResult> HandleAsync(
+    public async Task<Result<UserResponseDto>> HandleAsync(
         CreateUserCommand command,
         CancellationToken cancellationToken)
     {
@@ -19,7 +20,9 @@ public sealed class CreateUserHandler(AppDbContext context)
 
         if (emailExists)
         {
-            return CreateUserResult.DuplicateEmail();
+            return Result<UserResponseDto>.Fail(
+                "EmailAlreadyExists",
+                "An account with this email already exists.");;
         }
 
         var user = new User
@@ -49,6 +52,6 @@ public sealed class CreateUserHandler(AppDbContext context)
             user.ActivityLevel, 
             user.CreatedAt);
 
-        return CreateUserResult.Success(result);
+        return Result<UserResponseDto>.Success(result);
     }
 }
