@@ -8,6 +8,8 @@ using MyCal.ApiService.Features.Users;
 using MyCal.ApiService.Features.Users.CreateUser;
 using MyCal.ApiService.Features.Users.GetUserById;
 using MyCal.ApiService.Features.Users.GetUsers;
+using MyCal.ApiService.Integrations;
+using MyCal.ApiService.Integrations.USDA;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,6 +19,12 @@ builder.AddServiceDefaults();
 // Add services to the container.
 builder.Services.AddProblemDetails();
 builder.Services.AddValidatorsFromAssemblyContaining<CreateUserCommandValidator>();
+
+builder.Services.AddHttpClient<IFoodCatalogClient, USDAClient>(
+    client =>
+    {
+        client.BaseAddress= new Uri("https://api.nal.usda.gov/fdc/v1/");
+    });
 
 builder.Services.AddScoped<
     ICommandHandler<CreateUserCommand, Result<UserResponseDto>>, 
