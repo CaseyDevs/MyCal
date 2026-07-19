@@ -7,9 +7,9 @@ using MyCal.ApiService.Data;
 namespace MyCal.ApiService.Features.Users.CreateUser;
 
 public sealed class CreateUserHandler(AppDbContext context)
-    : ICommandHandler<CreateUserCommand, Result<UserResponseDto>>
+    : ICommandHandler<CreateUserCommand, Result<UserResponse>>
 {
-    public async Task<Result<UserResponseDto>> HandleAsync(
+    public async Task<Result<UserResponse>> HandleAsync(
         CreateUserCommand command,
         CancellationToken cancellationToken)
     {
@@ -20,7 +20,7 @@ public sealed class CreateUserHandler(AppDbContext context)
 
         if (emailExists)
         {
-            return Result<UserResponseDto>.Fail(
+            return Result<UserResponse>.Fail(
                 "EmailAlreadyExists",
                 "An account with this email already exists.");;
         }
@@ -40,7 +40,7 @@ public sealed class CreateUserHandler(AppDbContext context)
         context.Users.Add(user);
         await context.SaveChangesAsync(cancellationToken);
 
-        var result = new UserResponseDto(
+        var result = new UserResponse(
             user.Id, 
             user.Name, 
             user.Email, 
@@ -50,8 +50,9 @@ public sealed class CreateUserHandler(AppDbContext context)
             user.Age, 
             user.Gender, 
             user.ActivityLevel, 
+            null,
             user.CreatedAt);
 
-        return Result<UserResponseDto>.Success(result);
+        return Result<UserResponse>.Success(result);
     }
 }

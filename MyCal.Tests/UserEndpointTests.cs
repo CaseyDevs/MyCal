@@ -50,7 +50,7 @@ public sealed class UserEndpointTests
         Assert.AreEqual(HttpStatusCode.Created, response.StatusCode);
         Assert.IsNotNull(response.Headers.Location);
 
-        var user = await response.Content.ReadFromJsonAsync<UserResponseDto>();
+        var user = await response.Content.ReadFromJsonAsync<UserResponse>();
         Assert.IsNotNull(user);
         Assert.IsTrue(user.Id > 0);
         Assert.AreEqual(request.Name, user.Name);
@@ -88,13 +88,13 @@ public sealed class UserEndpointTests
     {
         var request = CreateValidRequest();
         var createResponse = await client.PostAsJsonAsync("/users", request);
-        var createdUser = await createResponse.Content.ReadFromJsonAsync<UserResponseDto>();
+        var createdUser = await createResponse.Content.ReadFromJsonAsync<UserResponse>();
 
         Assert.AreEqual(HttpStatusCode.Created, createResponse.StatusCode);
         Assert.IsNotNull(createdUser);
 
         var response = await client.GetAsync($"/users/{createdUser.Id}");
-        var user = await response.Content.ReadFromJsonAsync<UserResponseDto>();
+        var user = await response.Content.ReadFromJsonAsync<UserResponse>();
 
         Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
         Assert.IsNotNull(user);

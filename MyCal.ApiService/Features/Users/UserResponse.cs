@@ -2,7 +2,7 @@ using MyCal.ApiService.Common.Enum;
 
 namespace MyCal.ApiService.Features.Users;
 
-public sealed record UserResponseDto(
+public sealed record UserResponse(
     int Id,
     string Name,
     string Email,
@@ -12,4 +12,5 @@ public sealed record UserResponseDto(
     int Age,
     Gender Gender,
     ActivityLevel ActivityLevel,
+    DateTime? UpdatedAt,
     DateTime CreatedAt);

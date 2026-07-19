@@ -9,6 +9,7 @@ using MyCal.ApiService.Features.Users;
 using MyCal.ApiService.Features.Users.CreateUser;
 using MyCal.ApiService.Features.Users.GetUserById;
 using MyCal.ApiService.Features.Users.GetUsers;
+using MyCal.ApiService.Features.Users.UpdateUser;
 using MyCal.ApiService.Integrations;
 using MyCal.ApiService.Integrations.USDA;
 
@@ -20,6 +21,7 @@ builder.AddServiceDefaults();
 // Add services to the container.
 builder.Services.AddProblemDetails();
 builder.Services.AddValidatorsFromAssemblyContaining<CreateUserCommandValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<UpdateUserCommandValidator>();
 
 builder.Services.AddHttpClient<IFoodCatalogClient, USDAClient>(
     client =>
@@ -28,20 +30,25 @@ builder.Services.AddHttpClient<IFoodCatalogClient, USDAClient>(
     });
 
 builder.Services.AddScoped<
-    ICommandHandler<CreateUserCommand, Result<UserResponseDto>>, 
+    ICommandHandler<CreateUserCommand, Result<UserResponse>>, 
     CreateUserHandler>();
 
 builder.Services.AddScoped<
-    IQueryHandler<GetUserByIdQuery, UserResponseDto?>,
+    IQueryHandler<GetUserByIdQuery, UserResponse?>,
     GetUserByIdHandler>();
 
 builder.Services.AddScoped<
-    IQueryHandler<GetUsersQuery, List<UserResponseDto>>,
+    IQueryHandler<GetUsersQuery, List<UserResponse>>,
     GetUsersHandler>();
 
 builder.Services.AddScoped<
     IQueryHandler<SearchFoodByTextQuery, IReadOnlyList<FoodSearchResult>>, 
     SearchFoodByTextHandler>();
+
+builder.Services.AddScoped<
+    ICommandHandler<UpdateUserCommand, Result<UserResponse>>,
+    UpdateUserCommandHandler>();
+
 
 builder.AddNpgsqlDbContext<AppDbContext>("postgresdb");
 
