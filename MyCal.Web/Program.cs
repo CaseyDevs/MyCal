@@ -24,6 +24,8 @@ builder.Services.AddHttpClient<WeatherApiClient>(client =>
 
 builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
 
+builder.Services.AddScoped<IdentityRedirectManager>();
+
 // ------------------ ASP.NET Identity (auth) config -----------------
 builder.Services.AddAuthentication(options =>
     {
