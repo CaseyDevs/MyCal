@@ -1,0 +1,95 @@
+@page "/Account/ConfirmEmail"
+
+@using System.Text
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.WebUtilities
+@using MyCal.Web.Data
+
+@inject UserManager<ApplicationUser> UserManager
+@inject NavigationManager NavigationManager
+
+<PageTitle>Confirm email</PageTitle>
+
+<h1>Confirm email</h1>
+
+@if (confirmationSucceeded)
+{
+    <div class="alert alert-success" role="alert">
+        Your email address has been confirmed.
+    </div>
+
+    <p>
+        <a href="@loginUrl">Continue to login</a>
+    </p>
+}
+else if (message is not null)
+{
+    <div class="alert alert-danger" role="alert">
+        @message
+    </div>
+}
+
+@code {
+    private string? message;
+    private string loginUrl = "/Account/Login";
+    private bool confirmationSucceeded;
+
+    [SupplyParameterFromQuery(Name = "userId")]
+    private string? UserId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "code")]
+    private string? Code { get; set; }
+
+    [SupplyParameterFromQuery(Name = "returnUrl")]
+    private string? ReturnUrl { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (string.IsNullOrWhiteSpace(UserId) ||
+            string.IsNullOrWhiteSpace(Code))
+        {
+            message = "The email confirmation link is invalid.";
+            return;
+        }
+
+        var user = await UserManager.FindByIdAsync(UserId);
+
+        if (user is null)
+        {
+            message = "The email confirmation link is invalid.";
+            return;
+        }
+
+        string decodedCode;
+
+        try
+        {
+            decodedCode = Encoding.UTF8.GetString(
+                WebEncoders.Base64UrlDecode(Code));
+        }
+        catch (FormatException)
+        {
+            message = "The email confirmation link is invalid.";
+            return;
+        }
+
+        var result = await UserManager.ConfirmEmailAsync(
+            user,
+            decodedCode);
+
+        if (!result.Succeeded)
+        {
+            message = "The email confirmation link is invalid or expired.";
+            return;
+        }
+
+        confirmationSucceeded = true;
+
+        loginUrl = NavigationManager.GetUriWithQueryParameters(
+            "/Account/Login",
+            new Dictionary<string, object?>
+            {
+                ["returnUrl"] = ReturnUrl
+            });
+    }
+}

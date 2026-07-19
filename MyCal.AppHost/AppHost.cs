@@ -1,8 +1,16 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
 var cache = builder.AddRedis("cache");
-var postgres = builder.AddPostgres("postgres")
+var postgresPassword = builder.AddParameter(
+    "postgres-password",
+    secret: true
+);
+var postgres = builder
+    .AddPostgres(name: "postgres", password: postgresPassword)
+    .WithDataVolume()
+    .WithLifetime(ContainerLifetime.Persistent)
     .WithPgAdmin();
+
 var postgresdb = postgres.AddDatabase("postgresdb");
 var identitydb = postgres.AddDatabase("identitydb");
 
