@@ -26,6 +26,10 @@ builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuth
 
 builder.Services.AddScoped<IdentityRedirectManager>();
 
+builder.Services.AddSingleton<
+    IEmailSender<ApplicationUser>,
+    IdentityNoOpEmailSender>();
+
 // ------------------ ASP.NET Identity (auth) config -----------------
 builder.Services.AddAuthentication(options =>
     {
