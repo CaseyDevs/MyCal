@@ -7,6 +7,7 @@ using MyCal.ApiService.Endpoints;
 using MyCal.ApiService.Features.Foods;
 using MyCal.ApiService.Features.Users;
 using MyCal.ApiService.Features.Users.CreateUser;
+using MyCal.ApiService.Features.Users.DeleteUser;
 using MyCal.ApiService.Features.Users.GetUserById;
 using MyCal.ApiService.Features.Users.GetUsers;
 using MyCal.ApiService.Features.Users.UpdateUser;
@@ -48,6 +49,10 @@ builder.Services.AddScoped<
 builder.Services.AddScoped<
     ICommandHandler<UpdateUserCommand, Result<UserResponse>>,
     UpdateUserCommandHandler>();
+
+builder.Services.AddScoped<
+    ICommandHandler<DeleteUserCommand, Result>,
+    DeleteUserCommandHandler>();
 
 
 builder.AddNpgsqlDbContext<AppDbContext>("postgresdb");

@@ -4,6 +4,7 @@ using MyCal.ApiService.Common.Dto.User;
 using MyCal.ApiService.Common.Result;
 using MyCal.ApiService.Features.Users;
 using MyCal.ApiService.Features.Users.CreateUser;
+using MyCal.ApiService.Features.Users.DeleteUser;
 using MyCal.ApiService.Features.Users.GetUserById;
 using MyCal.ApiService.Features.Users.GetUsers;
 using MyCal.ApiService.Features.Users.UpdateUser;
@@ -109,6 +110,25 @@ public static class UserEndpoints
             }
 
             return Results.Ok(result.Data);
+        });
+
+        users.MapDelete("/{id:int}", async(
+            int id,
+            ICommandHandler<DeleteUserCommand, Result> handler,
+            CancellationToken cancellationToken) =>
+        {
+            var command = new DeleteUserCommand(
+                Id: id
+            );
+
+            var result = await handler.HandleAsync(command, cancellationToken);
+
+            if (!result.IsSuccess)
+            {
+                return Results.NotFound(result.ErrorMessage);
+            }
+
+            return Results.NoContent();
         });
 
         return app;
