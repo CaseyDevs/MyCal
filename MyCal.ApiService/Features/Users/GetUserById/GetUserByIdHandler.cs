@@ -23,6 +23,7 @@ public sealed class GetUserByIdHandler(AppDbContext context)
                 user.Age, 
                 user.Gender, 
                 user.ActivityLevel, 
+                user.OnboardingStatus,
                 null,
                 user.CreatedAt))
             .SingleOrDefaultAsync(cancellationToken);

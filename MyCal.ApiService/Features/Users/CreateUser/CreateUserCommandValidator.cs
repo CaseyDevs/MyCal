@@ -6,6 +6,7 @@ public sealed class CreateUserCommandValidator : AbstractValidator<CreateUserCom
 {
     public CreateUserCommandValidator()
     {
+        RuleFor(user => user.IdentityUserId).NotEmpty();
         RuleFor(user => user.Name).NotEmpty().MaximumLength(100);
         RuleFor(user => user.Email).NotEmpty().EmailAddress();
         RuleFor(user => user.Age).InclusiveBetween(13, 120);

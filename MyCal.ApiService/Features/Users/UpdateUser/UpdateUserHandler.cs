@@ -48,6 +48,7 @@ public sealed class UpdateUserCommandHandler(
             Age: user.Age,
             Gender: user.Gender,
             ActivityLevel: user.ActivityLevel,
+            OnboardingStatus: user.OnboardingStatus,
             UpdatedAt: DateTime.UtcNow,
             CreatedAt: user.CreatedAt);
 

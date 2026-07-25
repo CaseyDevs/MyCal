@@ -60,7 +60,9 @@ public sealed class UserEndpointTests
     [TestMethod]
     public async Task CreateUser_WithInvalidRequest_ReturnsValidationProblem()
     {
-        var request = new CreateUserCommand("", "not-an-email", 0, 0, 0, 0, (Gender)999, (ActivityLevel)999);
+        var request = new CreateUserCommand(
+            "", "", "not-an-email", 0, 0, 0, 0,
+            (Gender)999, (ActivityLevel)999);
         var response = await client.PostAsJsonAsync("/users", request);
 
         Assert.AreEqual(HttpStatusCode.BadRequest, response.StatusCode);
@@ -73,11 +75,15 @@ public sealed class UserEndpointTests
     }
 
     [TestMethod]
-    public async Task CreateUser_WithExistingEmail_ReturnsConflict()
+    public async Task CreateUser_WithExistingIdentityId_ReturnsConflict()
     {
-        var email = $"duplicate-{Guid.NewGuid():N}@example.com";
-        var firstResponse = await client.PostAsJsonAsync("/users", CreateValidRequest(email));
-        var secondResponse = await client.PostAsJsonAsync("/users", CreateValidRequest(email.ToUpperInvariant()));
+        var identityUserId = Guid.NewGuid().ToString();
+        var firstResponse = await client.PostAsJsonAsync(
+            "/users",
+            CreateValidRequest(identityUserId: identityUserId));
+        var secondResponse = await client.PostAsJsonAsync(
+            "/users",
+            CreateValidRequest(identityUserId: identityUserId));
 
         Assert.AreEqual(HttpStatusCode.Created, firstResponse.StatusCode);
         Assert.AreEqual(HttpStatusCode.Conflict, secondResponse.StatusCode);
@@ -102,7 +108,40 @@ public sealed class UserEndpointTests
         Assert.AreEqual(request.Email.ToLowerInvariant(), user.Email);
     }
 
-    private static CreateUserCommand CreateValidRequest(string? email = null) => new(
-        "Casey", email ?? $"casey-{Guid.NewGuid():N}@example.com", 180, 75, 70, 30,
+    [TestMethod]
+    public async Task GetProfile_WithExistingIdentityId_ReturnsSavedProfile()
+    {
+        var request = CreateValidRequest();
+        var createResponse = await client.PostAsJsonAsync("/users", request);
+
+        Assert.AreEqual(HttpStatusCode.Created, createResponse.StatusCode);
+
+        var response = await client.GetAsync($"/profiles/{request.IdentityUserId}");
+        var profile = await response.Content.ReadFromJsonAsync<UserResponse>();
+
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+        Assert.IsNotNull(profile);
+        Assert.AreEqual(request.Email, profile.Email);
+        Assert.AreEqual(OnboardingStatus.Pending, profile.OnboardingStatus);
+    }
+
+    [TestMethod]
+    public async Task GetProfile_WithMissingIdentityId_ReturnsNotFound()
+    {
+        var response = await client.GetAsync($"/profiles/{Guid.NewGuid()}");
+
+        Assert.AreEqual(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    private static CreateUserCommand CreateValidRequest(
+        string? email = null,
+        string? identityUserId = null) => new(
+        identityUserId ?? Guid.NewGuid().ToString(),
+        "Casey",
+        email ?? $"casey-{Guid.NewGuid():N}@example.com",
+        180,
+        75,
+        70,
+        30,
         Gender.Male, ActivityLevel.ModeratelyActive);
 }

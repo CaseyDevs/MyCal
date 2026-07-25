@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using MyCal.ApiService.Abstractions;
+using MyCal.ApiService.Common.Enum;
 using MyCal.ApiService.Common.Model;
 using MyCal.ApiService.Common.Result;
 using MyCal.ApiService.Data;
@@ -13,35 +14,36 @@ public sealed class CreateUserHandler(AppDbContext context)
         CreateUserCommand command,
         CancellationToken cancellationToken)
     {
-        var normalizedEmail = command.Email.Trim().ToLowerInvariant();
-        var emailExists = await context.Users
+        var profileExists = await context.Users
             .AsNoTracking()
-            .AnyAsync(user => user.Email == normalizedEmail, cancellationToken);
+            .AnyAsync(user => user.IdentityUserId == command.IdentityUserId, cancellationToken);
 
-        if (emailExists)
+        if (profileExists)
         {
             return Result<UserResponse>.Fail(
-                "EmailAlreadyExists",
-                "An account with this email already exists.");;
+                "ProfileAlreadyExists",
+                "An account already exists.");;
         }
 
         var user = new User
         {
+            IdentityUserId = command.IdentityUserId,
             Name = command.Name.Trim(),
-            Email = normalizedEmail,
+            Email = command.Email.Trim(),
             HeightInCm = command.HeightInCm,
             WeightInKg = command.WeightInKg,
             WeightGoal = command.WeightGoal,
             Age = command.Age,
             Gender = command.Gender,
-            ActivityLevel = command.ActivityLevel
+            ActivityLevel = command.ActivityLevel,
+            OnboardingStatus = OnboardingStatus.Pending
         };
 
         context.Users.Add(user);
         await context.SaveChangesAsync(cancellationToken);
 
         var result = new UserResponse(
-            user.Id, 
+            user.Id,
             user.Name, 
             user.Email, 
             user.HeightInCm, 
@@ -50,6 +52,7 @@ public sealed class CreateUserHandler(AppDbContext context)
             user.Age, 
             user.Gender, 
             user.ActivityLevel, 
+            user.OnboardingStatus,
             null,
             user.CreatedAt);
 

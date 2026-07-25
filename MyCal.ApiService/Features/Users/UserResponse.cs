@@ -12,5 +12,6 @@ public sealed record UserResponse(
     int Age,
     Gender Gender,
     ActivityLevel ActivityLevel,
+    OnboardingStatus OnboardingStatus,
     DateTime? UpdatedAt,
     DateTime CreatedAt);

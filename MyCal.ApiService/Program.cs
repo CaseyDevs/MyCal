@@ -5,6 +5,7 @@ using MyCal.ApiService.Common.Result;
 using MyCal.ApiService.Data;
 using MyCal.ApiService.Endpoints;
 using MyCal.ApiService.Features.Foods;
+using MyCal.ApiService.Features.Profiles;
 using MyCal.ApiService.Features.Users;
 using MyCal.ApiService.Features.Users.CreateUser;
 using MyCal.ApiService.Features.Users.DeleteUser;
@@ -27,11 +28,11 @@ builder.Services.AddValidatorsFromAssemblyContaining<UpdateUserCommandValidator>
 builder.Services.AddHttpClient<IFoodCatalogClient, USDAClient>(
     client =>
     {
-        client.BaseAddress= new Uri("https://api.nal.usda.gov/fdc/v1/");
+        client.BaseAddress = new Uri("https://api.nal.usda.gov/fdc/v1/");
     });
 
 builder.Services.AddScoped<
-    ICommandHandler<CreateUserCommand, Result<UserResponse>>, 
+    ICommandHandler<CreateUserCommand, Result<UserResponse>>,
     CreateUserHandler>();
 
 builder.Services.AddScoped<
@@ -43,7 +44,7 @@ builder.Services.AddScoped<
     GetUsersHandler>();
 
 builder.Services.AddScoped<
-    IQueryHandler<SearchFoodByTextQuery, IReadOnlyList<FoodSearchResult>>, 
+    IQueryHandler<SearchFoodByTextQuery, IReadOnlyList<FoodSearchResult>>,
     SearchFoodByTextHandler>();
 
 builder.Services.AddScoped<
@@ -54,6 +55,9 @@ builder.Services.AddScoped<
     ICommandHandler<DeleteUserCommand, Result>,
     DeleteUserCommandHandler>();
 
+builder.Services.AddScoped<
+    IQueryHandler<GetProfileByIdentityIdQuery, UserResponse?>,
+    GetProfileByIdentityIdQueryHandler>();
 
 builder.AddNpgsqlDbContext<AppDbContext>("postgresdb");
 
@@ -71,6 +75,7 @@ app.UseExceptionHandler();
 app.MapGet("/", () => "API service is running.");
 app.MapUserEndpoints();
 app.MapFoodEndpoints();
+app.MapProfileEndpoints();
 
 app.MapDefaultEndpoints();
 

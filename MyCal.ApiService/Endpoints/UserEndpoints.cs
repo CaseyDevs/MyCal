@@ -50,7 +50,7 @@ public static class UserEndpoints
             {
                 return result.ErrorCode switch
                 {
-                    "EmailAlreadyExists" => Results.Conflict(new
+                    "ProfileAlreadyExists" => Results.Conflict(new
                     {
                         messsage = result.ErrorMessage
                     }),
