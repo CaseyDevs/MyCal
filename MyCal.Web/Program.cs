@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using MyCal.Web;
 using MyCal.Web.Components;
 using MyCal.Web.Components.Account;
@@ -81,5 +82,15 @@ app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
 app.MapDefaultEndpoints();
+
+app.MapPost("/Account/Logout", async (
+    SignInManager<ApplicationUser> signInManager,
+    [FromForm] string returnUrl) =>
+{
+    await signInManager.SignOutAsync();
+
+    return TypedResults.LocalRedirect($"~/{returnUrl}");
+})
+.RequireAuthorization();
 
 app.Run();

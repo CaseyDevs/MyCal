@@ -1,4 +1,9 @@
-﻿@inherits LayoutComponentBase
+﻿@using Microsoft.AspNetCore.Identity
+@using MyCal.Web.Data
+
+@inherits LayoutComponentBase
+@inject SignInManager<ApplicationUser> SignInManager
+@inject NavigationManager NavigationManager
 
 <div class="page">
     <div class="sidebar">
@@ -8,6 +13,25 @@
     <main>
         <div class="top-row px-4">
             <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+            @* Display if user is logged in *@
+            <AuthorizeView>
+                <Authorized>
+                    <form action="Account/Logout" method="post">
+                        <AntiforgeryToken />
+
+                        <input type="hidden" name="returnUrl" value="@NavigationManager.ToBaseRelativePath(
+                                                      NavigationManager.Uri)" />
+
+                        <button type="submit" class="btn">
+                            <a>Logout</a>
+                        </button>
+                    </form>
+                </Authorized>
+
+                <NotAuthorized>
+                    <a href="/Account/Login">Login</a>
+                </NotAuthorized>
+            </AuthorizeView>
         </div>
 
         <article class="content px-4">
