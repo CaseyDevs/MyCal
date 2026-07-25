@@ -1,0 +1,89 @@
+@page "/Account/RegisterConfirmation"
+
+@using System.Text
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.WebUtilities
+@using MyCal.Web.Components.Account
+@using MyCal.Web.Data
+
+@inject UserManager<ApplicationUser> UserManager
+@inject IEmailSender<ApplicationUser> EmailSender
+@inject NavigationManager NavigationManager
+@inject IdentityRedirectManager RedirectManager
+@inject IHostEnvironment Environment
+
+<PageTitle>Confirm your registration</PageTitle>
+
+<h1>Confirm your registration</h1>
+
+@if (errorMessage is not null)
+{
+    <div class="alert alert-danger" role="alert">
+        @errorMessage
+    </div>
+}
+else if (confirmationLink is not null)
+{
+    <div class="alert alert-warning" role="alert">
+        Development mode: no real email was sent.
+    </div>
+
+    <p>
+        <a href="@confirmationLink">Confirm your email address</a>
+    </p>
+}
+else
+{
+    <p>Please check your email to confirm your account.</p>
+}
+
+@code {
+    private string? confirmationLink;
+    private string? errorMessage;
+
+    [SupplyParameterFromQuery]
+    private string? Email { get; set; }
+
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (string.IsNullOrWhiteSpace(Email))
+        {
+            RedirectManager.RedirectTo("");
+            return;
+        }
+
+        var user = await UserManager.FindByEmailAsync(Email);
+
+        if (user is null)
+        {
+            errorMessage = "Unable to display the confirmation link.";
+            return;
+        }
+
+        if (!Environment.IsDevelopment() ||
+            EmailSender is not IdentityNoOpEmailSender)
+        {
+            return;
+        }
+
+        var userId = await UserManager.GetUserIdAsync(user);
+        var token = await UserManager.GenerateEmailConfirmationTokenAsync(user);
+
+        var encodedToken = WebEncoders.Base64UrlEncode(
+            Encoding.UTF8.GetBytes(token));
+
+        confirmationLink = NavigationManager.GetUriWithQueryParameters(
+            NavigationManager
+                .ToAbsoluteUri("Account/ConfirmEmail")
+                .AbsoluteUri,
+            new Dictionary<string, object?>
+            {
+                ["userId"] = userId,
+                ["code"] = encodedToken,
+                ["returnUrl"] = ReturnUrl
+            });
+    }
+}

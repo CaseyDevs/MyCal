@@ -1,6 +1,13 @@
 ﻿<Router AppAssembly="typeof(Program).Assembly">
     <Found Context="routeData">
-        <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
+
+        @* Limit views based on auth *@
+        <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
+            <NotAuthorized>
+                <p>You must be logged in to access this page.</p>
+            </NotAuthorized>
+        </AuthorizeRouteView>
+        
         <FocusOnNavigate RouteData="routeData" Selector="h1" />
     </Found>
 </Router>
