@@ -108,31 +108,6 @@ public sealed class UserEndpointTests
         Assert.AreEqual(request.Email.ToLowerInvariant(), user.Email);
     }
 
-    [TestMethod]
-    public async Task GetProfile_WithExistingIdentityId_ReturnsSavedProfile()
-    {
-        var request = CreateValidRequest();
-        var createResponse = await client.PostAsJsonAsync("/users", request);
-
-        Assert.AreEqual(HttpStatusCode.Created, createResponse.StatusCode);
-
-        var response = await client.GetAsync($"/profiles/{request.IdentityUserId}");
-        var profile = await response.Content.ReadFromJsonAsync<UserResponse>();
-
-        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
-        Assert.IsNotNull(profile);
-        Assert.AreEqual(request.Email, profile.Email);
-        Assert.AreEqual(OnboardingStatus.Pending, profile.OnboardingStatus);
-    }
-
-    [TestMethod]
-    public async Task GetProfile_WithMissingIdentityId_ReturnsNotFound()
-    {
-        var response = await client.GetAsync($"/profiles/{Guid.NewGuid()}");
-
-        Assert.AreEqual(HttpStatusCode.NotFound, response.StatusCode);
-    }
-
     private static CreateUserCommand CreateValidRequest(
         string? email = null,
         string? identityUserId = null) => new(

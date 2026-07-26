@@ -20,6 +20,9 @@ var builder = WebApplication.CreateBuilder(args);
 // Add service defaults & Aspire client integrations.
 builder.AddServiceDefaults();
 
+builder.Services.AddAuthentication();
+builder.Services.AddAuthorization();
+
 // Add services to the container.
 builder.Services.AddProblemDetails();
 builder.Services.AddValidatorsFromAssemblyContaining<CreateUserCommandValidator>();
@@ -71,6 +74,9 @@ using (var scope = app.Services.CreateScope())
 
 // Configure the HTTP request pipeline.
 app.UseExceptionHandler();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapGet("/", () => "API service is running.");
 app.MapUserEndpoints();

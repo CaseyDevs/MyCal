@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using MyCal.ApiService.Abstractions;
 using MyCal.ApiService.Features.Profiles;
 using MyCal.ApiService.Features.Users;
@@ -12,11 +13,20 @@ public static class ProfileEndpoints
         var profiles = app.MapGroup("/profiles");
 
         profiles.MapGet(
-            "/{identityUserId}", async (
-                string identityUserId,
+            "/me", async (
+                ClaimsPrincipal principal,
                 IQueryHandler<GetProfileByIdentityIdQuery, UserResponse?> handler,
                 CancellationToken cancellationToken) =>
             {
+                var identityUserId = principal.FindFirstValue(
+                    ClaimTypes.NameIdentifier
+                );
+
+                if (identityUserId is null)
+                {
+                    return Results.Unauthorized();
+                }
+
                 var query = new GetProfileByIdentityIdQuery(identityUserId);
                 var result = await handler.HandleAsync(query, cancellationToken);
 
