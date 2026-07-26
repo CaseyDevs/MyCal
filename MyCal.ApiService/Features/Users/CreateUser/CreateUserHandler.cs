@@ -36,7 +36,7 @@ public sealed class CreateUserHandler(AppDbContext context)
             Age = command.Age,
             Gender = command.Gender,
             ActivityLevel = command.ActivityLevel,
-            OnboardingStatus = OnboardingStatus.Pending
+            OnboardingStatus = OnboardingStatus.Complete
         };
 
         context.Users.Add(user);

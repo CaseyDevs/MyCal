@@ -1,0 +1,192 @@
+@page "/profile-setup"
+@page "/profile/setup"
+
+@using System.ComponentModel.DataAnnotations
+@using MyCal.Web.Clients.Profile
+
+@attribute [Authorize]
+
+@inject IProfileApiClient ProfileApiClient
+@inject NavigationManager NavigationManager
+
+<PageTitle>Profile setup</PageTitle>
+
+<h1>Set up your profile</h1>
+
+<p class="text-muted">
+    Add the basics MyCal needs to personalize your daily calorie target.
+</p>
+
+@if (errorMessage is not null)
+{
+    <div class="alert alert-danger" role="alert">
+        @errorMessage
+    </div>
+}
+
+<EditForm Model="Input"
+          method="post"
+          OnValidSubmit="CreateProfile"
+          FormName="profile-setup">
+
+    <DataAnnotationsValidator />
+    <ValidationSummary class="text-danger" />
+
+    <div class="row g-3">
+        <div class="col-12 col-md-6">
+            <label for="profile-name" class="form-label">Name</label>
+            <InputText id="profile-name"
+                       class="form-control"
+                       @bind-Value="Input.Name"
+                       autocomplete="name" />
+            <ValidationMessage For="() => Input.Name" />
+        </div>
+
+        <div class="col-12 col-md-6">
+            <label for="profile-email" class="form-label">Email</label>
+            <InputText id="profile-email"
+                       class="form-control"
+                       @bind-Value="Input.Email"
+                       autocomplete="email" />
+            <ValidationMessage For="() => Input.Email" />
+        </div>
+
+        <div class="col-12 col-md-4">
+            <label for="profile-age" class="form-label">Age</label>
+            <InputNumber id="profile-age"
+                         class="form-control"
+                         @bind-Value="Input.Age" />
+            <ValidationMessage For="() => Input.Age" />
+        </div>
+
+        <div class="col-12 col-md-4">
+            <label for="profile-gender" class="form-label">Gender</label>
+            <InputSelect id="profile-gender"
+                         class="form-select"
+                         @bind-Value="Input.Gender">
+                <option value="@Gender.Male">Male</option>
+                <option value="@Gender.Female">Female</option>
+            </InputSelect>
+            <ValidationMessage For="() => Input.Gender" />
+        </div>
+
+        <div class="col-12 col-md-4">
+            <label for="profile-activity" class="form-label">Activity level</label>
+            <InputSelect id="profile-activity"
+                         class="form-select"
+                         @bind-Value="Input.ActivityLevel">
+                <option value="@ActivityLevel.Sedentary">Sedentary</option>
+                <option value="@ActivityLevel.LightlyActive">Lightly active</option>
+                <option value="@ActivityLevel.ModeratelyActive">Moderately active</option>
+                <option value="@ActivityLevel.VeryActive">Very active</option>
+                <option value="@ActivityLevel.ExtraActive">Extra active</option>
+            </InputSelect>
+            <ValidationMessage For="() => Input.ActivityLevel" />
+        </div>
+
+        <div class="col-12 col-md-4">
+            <label for="profile-height" class="form-label">Height (cm)</label>
+            <InputNumber id="profile-height"
+                         class="form-control"
+                         @bind-Value="Input.HeightInCm" />
+            <ValidationMessage For="() => Input.HeightInCm" />
+        </div>
+
+        <div class="col-12 col-md-4">
+            <label for="profile-weight" class="form-label">Current weight (kg)</label>
+            <InputNumber id="profile-weight"
+                         class="form-control"
+                         @bind-Value="Input.WeightInKg" />
+            <ValidationMessage For="() => Input.WeightInKg" />
+        </div>
+
+        <div class="col-12 col-md-4">
+            <label for="profile-weight-goal" class="form-label">Goal weight (kg)</label>
+            <InputNumber id="profile-weight-goal"
+                         class="form-control"
+                         @bind-Value="Input.WeightGoal" />
+            <ValidationMessage For="() => Input.WeightGoal" />
+        </div>
+    </div>
+
+    <div class="mt-4 d-flex gap-2">
+        <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
+            @(isSubmitting ? "Creating..." : "Create profile")
+        </button>
+        <a href="/profile" class="btn btn-link">Cancel</a>
+    </div>
+</EditForm>
+
+@code {
+    private string? errorMessage;
+    private bool isSubmitting;
+
+    [SupplyParameterFromForm]
+    private ProfileSetupInput Input { get; set; } = default!;
+
+    protected override void OnInitialized()
+    {
+        Input ??= new();
+    }
+
+    private async Task CreateProfile()
+    {
+        errorMessage = null;
+        isSubmitting = true;
+
+        try
+        {
+            var profile = new UserProfileRequest(
+                Name: Input.Name,
+                Email: Input.Email,
+                HeightInCm: Input.HeightInCm,
+                WeightInKg: Input.WeightInKg,
+                WeightGoal: Input.WeightGoal,
+                Age: Input.Age,
+                Gender: Input.Gender,
+                ActivityLevel: Input.ActivityLevel);
+
+            await ProfileApiClient.CreateUserProfileAsync(
+                profile,
+                CancellationToken.None);
+
+            NavigationManager.NavigateTo("/profile");
+        }
+        catch (HttpRequestException)
+        {
+            errorMessage = "We couldn't create your profile right now. Please try again.";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private sealed class ProfileSetupInput
+    {
+        [Required]
+        [StringLength(100)]
+        public string Name { get; set; } = "";
+
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; } = "";
+
+        [Range(1, 130)]
+        public int Age { get; set; } = 30;
+
+        [Range(80, 250)]
+        public double HeightInCm { get; set; } = 170;
+
+        [Range(30, 300)]
+        public double WeightInKg { get; set; } = 75;
+
+        [Range(30, 300)]
+        public double WeightGoal { get; set; } = 70;
+
+        public Gender Gender { get; set; } = Gender.Male;
+
+        public ActivityLevel ActivityLevel { get; set; } =
+            ActivityLevel.LightlyActive;
+    }
+}

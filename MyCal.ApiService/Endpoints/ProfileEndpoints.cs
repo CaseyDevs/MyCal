@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Microsoft.AspNetCore.Mvc;
 using MyCal.ApiService.Abstractions;
 using MyCal.ApiService.Features.Profiles;
 using MyCal.ApiService.Features.Users;
@@ -15,12 +16,12 @@ public static class ProfileEndpoints
         profiles.MapGet(
             "/me", async (
                 ClaimsPrincipal principal,
+                [FromQuery] string? identityUserId,
                 IQueryHandler<GetProfileByIdentityIdQuery, UserResponse?> handler,
                 CancellationToken cancellationToken) =>
             {
-                var identityUserId = principal.FindFirstValue(
-                    ClaimTypes.NameIdentifier
-                );
+                identityUserId ??= principal.FindFirstValue(
+                    ClaimTypes.NameIdentifier);
 
                 if (identityUserId is null)
                 {
