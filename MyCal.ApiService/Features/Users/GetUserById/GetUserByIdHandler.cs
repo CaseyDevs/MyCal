@@ -20,6 +20,7 @@ public sealed class GetUserByIdHandler(AppDbContext context)
                 user.HeightInCm, 
                 user.WeightInKg,
                 user.WeightGoal, 
+                user.MaintenanceCalories,
                 user.Age, 
                 user.Gender, 
                 user.ActivityLevel, 

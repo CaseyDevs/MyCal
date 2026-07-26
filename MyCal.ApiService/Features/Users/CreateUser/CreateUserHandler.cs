@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using MyCal.ApiService.Abstractions;
+using MyCal.ApiService.Calculators;
 using MyCal.ApiService.Common.Enum;
 using MyCal.ApiService.Common.Model;
 using MyCal.ApiService.Common.Result;
@@ -39,6 +40,8 @@ public sealed class CreateUserHandler(AppDbContext context)
             OnboardingStatus = OnboardingStatus.Complete
         };
 
+        user.MaintenanceCalories = CalorieCalculator.CalculateMaintenanceCalories(user);
+
         context.Users.Add(user);
         await context.SaveChangesAsync(cancellationToken);
 
@@ -49,6 +52,7 @@ public sealed class CreateUserHandler(AppDbContext context)
             user.HeightInCm, 
             user.WeightInKg,
             user.WeightGoal, 
+            user.MaintenanceCalories,
             user.Age, 
             user.Gender, 
             user.ActivityLevel, 

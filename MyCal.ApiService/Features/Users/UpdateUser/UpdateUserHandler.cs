@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using MyCal.ApiService.Abstractions;
+using MyCal.ApiService.Calculators;
 using MyCal.ApiService.Common.Result;
 using MyCal.ApiService.Data;
 
@@ -35,6 +36,7 @@ public sealed class UpdateUserCommandHandler(
         user.Age = command.Age;
         user.Gender = command.Gender;
         user.ActivityLevel = command.ActivityLevel;
+        user.MaintenanceCalories = CalorieCalculator.CalculateMaintenanceCalories(user);
 
         await context.SaveChangesAsync(cancellationToken);
         
@@ -45,6 +47,7 @@ public sealed class UpdateUserCommandHandler(
             HeightInCm: user.HeightInCm,
             WeightInKg: user.WeightInKg,
             WeightGoal: user.WeightGoal,
+            MaintenanceCalories: user.MaintenanceCalories,
             Age: user.Age,
             Gender: user.Gender,
             ActivityLevel: user.ActivityLevel,

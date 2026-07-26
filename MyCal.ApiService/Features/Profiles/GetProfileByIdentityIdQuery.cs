@@ -26,6 +26,7 @@ public sealed class GetProfileByIdentityIdQueryHandler(
                 profile.HeightInCm,
                 profile.WeightInKg,
                 profile.WeightGoal,
+                profile.MaintenanceCalories,
                 profile.Age,
                 profile.Gender,
                 profile.ActivityLevel,

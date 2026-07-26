@@ -9,6 +9,7 @@ public sealed record UserResponse(
     double HeightInCm,
     double WeightInKg,
     double WeightGoal,
+    double MaintenanceCalories,
     int Age,
     Gender Gender,
     ActivityLevel ActivityLevel,

@@ -13,7 +13,18 @@ public sealed class GetUsersHandler(AppDbContext context)
         await context.Users
             .AsNoTracking()
             .Select(user => new UserResponse(
-                user.Id, user.Name, user.Email, user.HeightInCm, user.WeightInKg,
-                user.WeightGoal, user.Age, user.Gender, user.ActivityLevel, user.OnboardingStatus, null,user.CreatedAt))
+                user.Id, 
+                user.Name, 
+                user.Email, 
+                user.HeightInCm,
+                user.WeightInKg,
+                user.WeightGoal,
+                user.MaintenanceCalories, 
+                user.Age, 
+                user.Gender, 
+                user.ActivityLevel, 
+                user.OnboardingStatus, 
+                null,
+                user.CreatedAt))
             .ToListAsync(cancellationToken);
 }
