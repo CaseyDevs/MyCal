@@ -40,8 +40,9 @@ public sealed class CreateUserHandler(AppDbContext context)
             OnboardingStatus = OnboardingStatus.Complete
         };
 
+        user.GoalType = CalorieCalculator.DetermineGoalType(user);
         user.MaintenanceCalories = CalorieCalculator.CalculateMaintenanceCalories(user);
-
+        
         context.Users.Add(user);
         await context.SaveChangesAsync(cancellationToken);
 
@@ -51,14 +52,13 @@ public sealed class CreateUserHandler(AppDbContext context)
             user.Email, 
             user.HeightInCm, 
             user.WeightInKg,
-            user.WeightGoal, 
+            user.WeightGoal,
+            user.GoalType,
             user.MaintenanceCalories,
             user.Age, 
             user.Gender, 
             user.ActivityLevel, 
-            user.OnboardingStatus,
-            null,
-            user.CreatedAt);
+            user.OnboardingStatus);
 
         return Result<UserResponse>.Success(result);
     }

@@ -12,7 +12,7 @@ public static class CalorieCalculator
     /// <param name="user"></param>
     /// <returns></returns>
     /// <exception cref="ArgumentOutOfRangeException"></exception>
-    public static double CalculateBmr(User user) => user.Gender switch
+    private static double CalculateBmr(User user) => user.Gender switch
     {
         Gender.Male =>
             (10 * user.WeightInKg) + (6.25 * user.HeightInCm) - (5 * user.Age) + 5,

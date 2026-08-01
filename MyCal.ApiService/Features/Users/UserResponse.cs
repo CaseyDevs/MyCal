@@ -9,10 +9,9 @@ public sealed record UserResponse(
     double HeightInCm,
     double WeightInKg,
     double WeightGoal,
+    GoalType GoalType,
     double MaintenanceCalories,
     int Age,
     Gender Gender,
     ActivityLevel ActivityLevel,
-    OnboardingStatus OnboardingStatus,
-    DateTime? UpdatedAt,
-    DateTime CreatedAt);
+    OnboardingStatus OnboardingStatus);

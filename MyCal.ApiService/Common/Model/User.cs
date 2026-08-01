@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using MyCal.ApiService.Common.Enum;
 
 namespace MyCal.ApiService.Common.Model;
@@ -5,12 +6,13 @@ namespace MyCal.ApiService.Common.Model;
 public class User
 {
     public int Id { get; set; }
-    public required string IdentityUserId { get; set; }
+    public required string IdentityUserId { get; init; }
     public string Name { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public double HeightInCm { get; set; }
     public double WeightInKg { get; set; }
     public double WeightGoal { get; set; }
+    public GoalType GoalType { get; set; }
     public double MaintenanceCalories { get; set; }
     public int Age { get; set; }
     public Gender Gender { get; set; }

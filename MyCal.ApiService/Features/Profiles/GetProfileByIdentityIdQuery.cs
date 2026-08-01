@@ -26,12 +26,11 @@ public sealed class GetProfileByIdentityIdQueryHandler(
                 profile.HeightInCm,
                 profile.WeightInKg,
                 profile.WeightGoal,
+                profile.GoalType,
                 profile.MaintenanceCalories,
                 profile.Age,
                 profile.Gender,
                 profile.ActivityLevel,
-                profile.OnboardingStatus,
-                null,
-                profile.CreatedAt))
+                profile.OnboardingStatus))
             .SingleOrDefaultAsync(cancellationToken);
 }

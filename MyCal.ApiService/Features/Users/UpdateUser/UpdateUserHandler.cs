@@ -47,13 +47,12 @@ public sealed class UpdateUserCommandHandler(
             HeightInCm: user.HeightInCm,
             WeightInKg: user.WeightInKg,
             WeightGoal: user.WeightGoal,
+            GoalType: user.GoalType,
             MaintenanceCalories: user.MaintenanceCalories,
             Age: user.Age,
             Gender: user.Gender,
             ActivityLevel: user.ActivityLevel,
-            OnboardingStatus: user.OnboardingStatus,
-            UpdatedAt: DateTime.UtcNow,
-            CreatedAt: user.CreatedAt);
+            OnboardingStatus: user.OnboardingStatus);
 
         return Result<UserResponse>.Success(response);
     }

@@ -20,12 +20,11 @@ public sealed class GetUserByIdHandler(AppDbContext context)
                 user.HeightInCm, 
                 user.WeightInKg,
                 user.WeightGoal, 
+                user.GoalType,
                 user.MaintenanceCalories,
                 user.Age, 
                 user.Gender, 
                 user.ActivityLevel, 
-                user.OnboardingStatus,
-                null,
-                user.CreatedAt))
+                user.OnboardingStatus))
             .SingleOrDefaultAsync(cancellationToken);
 }
