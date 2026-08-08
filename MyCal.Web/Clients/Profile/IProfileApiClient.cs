@@ -1,3 +1,5 @@
+using MyCal.ApiService.Common.Model;
+
 namespace MyCal.Web.Clients.Profile;
 
 public interface IProfileApiClient 
@@ -23,6 +25,7 @@ public sealed record UserProfileRequest(
 
 public sealed record UserProfileResponse(
     int Id,
+    List<FoodLog> FoodLogs,
     string Name,
     string Email,
     double HeightInCm,

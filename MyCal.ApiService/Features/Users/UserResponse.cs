@@ -1,9 +1,11 @@
 using MyCal.ApiService.Common.Enum;
+using MyCal.ApiService.Common.Model;
 
 namespace MyCal.ApiService.Features.Users;
 
 public sealed record UserResponse(
     int Id,
+    List<FoodLog> FoodLogs,
     string Name,
     string Email,
     double HeightInCm,

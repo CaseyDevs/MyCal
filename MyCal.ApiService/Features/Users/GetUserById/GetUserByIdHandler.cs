@@ -14,7 +14,8 @@ public sealed class GetUserByIdHandler(AppDbContext context)
             .AsNoTracking()
             .Where(user => user.Id == request.Id)
             .Select(user => new UserResponse(
-                user.Id, 
+                user.Id,
+                user.FoodLogs,
                 user.Name, 
                 user.Email, 
                 user.HeightInCm, 

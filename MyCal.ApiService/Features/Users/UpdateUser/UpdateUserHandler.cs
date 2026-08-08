@@ -17,6 +17,7 @@ public sealed class UpdateUserCommandHandler(
         CancellationToken cancellationToken)
     {
         var user = await context.Users
+            .Include(user => user.FoodLogs)
             .SingleOrDefaultAsync(
                 user => user.Id == command.Id,
                 cancellationToken);
@@ -42,6 +43,7 @@ public sealed class UpdateUserCommandHandler(
         
         var response = new UserResponse(
             Id: user.Id,
+            FoodLogs: user.FoodLogs,
             Name: user.Name,
             Email: user.Email,
             HeightInCm: user.HeightInCm,

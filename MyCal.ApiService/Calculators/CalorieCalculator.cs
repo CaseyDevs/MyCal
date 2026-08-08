@@ -41,7 +41,8 @@ public static class CalorieCalculator
             _ => throw new ArgumentOutOfRangeException(nameof(user.ActivityLevel))
         };
 
-        return CalculateBmr(user) * multiplier;
+        var res = CalculateBmr(user) * multiplier;
+        return Math.Round(res);
     }
 
     /// <summary>

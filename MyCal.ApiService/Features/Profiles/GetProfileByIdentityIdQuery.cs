@@ -21,6 +21,7 @@ public sealed class GetProfileByIdentityIdQueryHandler(
             .Where(user => user.IdentityUserId == query.IdentityUserId)
             .Select(profile => new UserResponse(
                 profile.Id,
+                profile.FoodLogs,
                 profile.Name,
                 profile.Email,
                 profile.HeightInCm,

@@ -48,6 +48,7 @@ public sealed class CreateUserHandler(AppDbContext context)
 
         var result = new UserResponse(
             user.Id,
+            user.FoodLogs,
             user.Name, 
             user.Email, 
             user.HeightInCm, 

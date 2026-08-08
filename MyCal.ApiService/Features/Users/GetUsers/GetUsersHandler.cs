@@ -14,6 +14,7 @@ public sealed class GetUsersHandler(AppDbContext context)
             .AsNoTracking()
             .Select(user => new UserResponse(
                 user.Id, 
+                user.FoodLogs,
                 user.Name, 
                 user.Email, 
                 user.HeightInCm,
