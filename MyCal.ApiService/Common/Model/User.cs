@@ -1,12 +1,13 @@
 using System.ComponentModel.DataAnnotations;
+using MyCal.ApiService.Abstractions;
 using MyCal.ApiService.Common.Enum;
 
 namespace MyCal.ApiService.Common.Model;
 
-public class User
+public class User : DomainEntity
 {
-    public int Id { get; set; }
     public required string IdentityUserId { get; init; }
+    public List<FoodLog> FoodLogs { get; set; } = [];
     public string Name { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public double HeightInCm { get; set; }
