@@ -27,9 +27,10 @@ public static class ProfileEndpoints
                 {
                     return Results.Unauthorized();
                 }
-
-                var query = new GetProfileByIdentityIdQuery(identityUserId);
-                var result = await handler.HandleAsync(query, cancellationToken);
+                
+                var result = await handler.HandleAsync(
+                    new GetProfileByIdentityIdQuery(identityUserId), 
+                    cancellationToken);
 
                 return result is null
                     ? Results.NotFound()

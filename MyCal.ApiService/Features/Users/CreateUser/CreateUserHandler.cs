@@ -22,8 +22,8 @@ public sealed class CreateUserHandler(AppDbContext context)
         if (profileExists)
         {
             return Result<UserResponse>.Fail(
-                "ProfileAlreadyExists",
-                "An account already exists.");;
+                "An account with this email already exists.",
+                "ProfileAlreadyExists");;
         }
 
         var user = new User

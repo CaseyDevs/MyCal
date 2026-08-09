@@ -37,6 +37,7 @@ public sealed class UpdateUserCommandHandler(
         user.Age = command.Age;
         user.Gender = command.Gender;
         user.ActivityLevel = command.ActivityLevel;
+        user.GoalType = CalorieCalculator.DetermineGoalType(user);
         user.MaintenanceCalories = CalorieCalculator.CalculateMaintenanceCalories(user);
 
         await context.SaveChangesAsync(cancellationToken);

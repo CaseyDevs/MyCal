@@ -47,7 +47,7 @@ public static class CalorieCalculator
 
     /// <summary>
     /// Calculates the target calories based on the user's maintenance calories, goal type, and goal pace.
-    /// </summary>
+    /// </summary> 
     /// <param name="user"></param>
     /// <param name="goal"></param>
     /// <param name="pace"></param>
