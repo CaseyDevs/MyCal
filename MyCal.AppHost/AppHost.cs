@@ -7,6 +7,7 @@ var postgresPassword = builder.AddParameter(
 );
 var postgres = builder
     .AddPostgres(name: "postgres", password: postgresPassword)
+    .WithHostPort(51885)
     .WithDataVolume()
     .WithLifetime(ContainerLifetime.Persistent)
     .WithPgAdmin();

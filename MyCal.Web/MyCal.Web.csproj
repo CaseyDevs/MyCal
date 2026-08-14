@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\MyCal.Domain\MyCal.Domain.csproj" />
     <ProjectReference Include="..\MyCal.ServiceDefaults\MyCal.ServiceDefaults.csproj" />
   </ItemGroup>
 

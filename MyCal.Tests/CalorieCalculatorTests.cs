@@ -1,6 +1,6 @@
-using MyCal.ApiService.Calculators;
-using MyCal.ApiService.Common.Enum;
-using MyCal.ApiService.Common.Model;
+using MyCal.Application.Calculators;
+using MyCal.Domain.Enum;
+using MyCal.Domain.Entity;
 
 namespace MyCal.Tests;
 
@@ -15,6 +15,7 @@ public class CalorieCalculatorTests
         // test user
         user = new User
         {
+            IdentityUserId = "1389123",
             HeightInCm = 180,
             WeightInKg = 75,
             Age = 30,

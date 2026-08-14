@@ -1,0 +1,72 @@
+@page "/profile"
+@page "/profiles"
+@using MyCal.Web.Clients.Profile
+@attribute [Authorize]
+
+<PageTitle>My profile</PageTitle>
+
+<h1>My profile</h1>
+@if (_profile == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div>
+        <p>Hi, @_profile.Name</p>
+        <p>Email: @_profile.Email</p>
+        <p>Weight: @_profile.WeightInKg Kg</p>
+        <p>Your current goal: @_profile.WeightGoal</p>
+        <p>Maintenance calories: @_profile.MaintenanceCalories</p>
+    </div>
+    <div>
+        <h3>Your logs: </h3>
+
+        @if (_profile.FoodLogs.Count == 0)
+        {
+            <p>No logs yet. Start tracking today!</p>
+        }
+        else
+        {
+            <ul>
+                @foreach (var log in _profile.FoodLogs)
+                {
+                    <li>@log.Date</li>
+                }
+            </ul>
+        }
+    </div>
+}
+
+@code {
+    [Inject] private IProfileApiClient _profileApiClient { get; set; } = default!;
+    [Inject] private NavigationManager NavigationManager { get; set; } = default!;
+    private UserProfileResponse? _profile;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProfile();
+        CheckOnboardingStatus();
+    }
+
+    private async Task LoadProfile()
+    {
+        _profile = await _profileApiClient.GetUserProfileAsync(CancellationToken.None);
+    }
+
+    private async Task RefreshProfile()
+    {
+        await LoadProfile();
+        StateHasChanged();
+    }
+
+    private void CheckOnboardingStatus()
+    {
+        if (_profile is null ||
+            _profile.OnboardingStatus == OnboardingStatus.Pending)
+        {
+            NavigationManager.NavigateTo("/profile-setup");
+        }
+    }
+
+}

@@ -1,4 +1,5 @@
-using MyCal.ApiService.Features.Foods;
+using MyCal.Application.Features.Foods;
+using MyCal.Application.Integrations;
 
 namespace MyCal.ApiService.Integrations.USDA;
 
@@ -70,5 +71,4 @@ public sealed class USDAClient(
         string? UnitName,
         double? Value);
 }
-
 

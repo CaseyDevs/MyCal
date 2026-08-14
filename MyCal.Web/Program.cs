@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using MyCal.Web;
+using MyCal.Web.Clients.Profile;
 using MyCal.Web.Components;
 using MyCal.Web.Components.Account;
 using MyCal.Web.Data;
@@ -16,16 +17,15 @@ builder.AddRedisOutputCache("cache");
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-builder.Services.AddHttpClient<WeatherApiClient>(client =>
-    {
-        // This URL uses "https+http://" to indicate HTTPS is preferred over HTTP.
-        // Learn more about service discovery scheme resolution at https://aka.ms/dotnet/sdschemes.
-        client.BaseAddress = new("https+http://apiservice");
-    });
-
 builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
 
 builder.Services.AddScoped<IdentityRedirectManager>();
+
+builder.Services.AddHttpClient<IProfileApiClient, ProfileApiClient>(
+    client =>
+    {
+        client.BaseAddress = new Uri("https+http://apiservice");
+    });
 
 builder.Services.AddSingleton<
     IEmailSender<ApplicationUser>,

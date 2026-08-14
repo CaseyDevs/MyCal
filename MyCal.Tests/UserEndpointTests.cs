@@ -3,9 +3,9 @@ using System.Net.Http.Json;
 using Aspire.Hosting;
 using Aspire.Hosting.Testing;
 using Microsoft.AspNetCore.Mvc;
-using MyCal.ApiService.Common.Enum;
-using MyCal.ApiService.Features.Users;
-using MyCal.ApiService.Features.Users.CreateUser;
+using MyCal.Domain.Enum;
+using MyCal.Application.Features.Users;
+using MyCal.Application.Features.Users.CreateUser;
 
 namespace MyCal.Tests;
 
@@ -37,8 +37,12 @@ public sealed class UserEndpointTests
     [ClassCleanup]
     public static async Task CleanupAsync()
     {
-        client.Dispose();
-        await app.DisposeAsync();
+        client?.Dispose();
+
+        if (app is not null)
+        {
+            await app.DisposeAsync();
+        }
     }
 
     [TestMethod]
@@ -60,7 +64,9 @@ public sealed class UserEndpointTests
     [TestMethod]
     public async Task CreateUser_WithInvalidRequest_ReturnsValidationProblem()
     {
-        var request = new CreateUserCommand("", "not-an-email", 0, 0, 0, 0, (Gender)999, (ActivityLevel)999);
+        var request = new CreateUserCommand(
+            "", "", "not-an-email", 0, 0, 0, 0,
+            (Gender)999, (ActivityLevel)999);
         var response = await client.PostAsJsonAsync("/users", request);
 
         Assert.AreEqual(HttpStatusCode.BadRequest, response.StatusCode);
@@ -73,11 +79,15 @@ public sealed class UserEndpointTests
     }
 
     [TestMethod]
-    public async Task CreateUser_WithExistingEmail_ReturnsConflict()
+    public async Task CreateUser_WithExistingIdentityId_ReturnsConflict()
     {
-        var email = $"duplicate-{Guid.NewGuid():N}@example.com";
-        var firstResponse = await client.PostAsJsonAsync("/users", CreateValidRequest(email));
-        var secondResponse = await client.PostAsJsonAsync("/users", CreateValidRequest(email.ToUpperInvariant()));
+        var identityUserId = Guid.NewGuid().ToString();
+        var firstResponse = await client.PostAsJsonAsync(
+            "/users",
+            CreateValidRequest(identityUserId: identityUserId));
+        var secondResponse = await client.PostAsJsonAsync(
+            "/users",
+            CreateValidRequest(identityUserId: identityUserId));
 
         Assert.AreEqual(HttpStatusCode.Created, firstResponse.StatusCode);
         Assert.AreEqual(HttpStatusCode.Conflict, secondResponse.StatusCode);
@@ -102,7 +112,15 @@ public sealed class UserEndpointTests
         Assert.AreEqual(request.Email.ToLowerInvariant(), user.Email);
     }
 
-    private static CreateUserCommand CreateValidRequest(string? email = null) => new(
-        "Casey", email ?? $"casey-{Guid.NewGuid():N}@example.com", 180, 75, 70, 30,
+    private static CreateUserCommand CreateValidRequest(
+        string? email = null,
+        string? identityUserId = null) => new(
+        identityUserId ?? Guid.NewGuid().ToString(),
+        "Casey",
+        email ?? $"casey-{Guid.NewGuid():N}@example.com",
+        180,
+        75,
+        70,
+        30,
         Gender.Male, ActivityLevel.ModeratelyActive);
 }
