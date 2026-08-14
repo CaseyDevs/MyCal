@@ -1,8 +1,8 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
-using MyCal.ApiService.Abstractions;
-using MyCal.ApiService.Features.Profiles;
-using MyCal.ApiService.Features.Users;
+using MyCal.Domain.Abstractions;
+using MyCal.Application.Features.Profiles;
+using MyCal.Application.Features.Users;
 
 namespace MyCal.ApiService.Endpoints;
 

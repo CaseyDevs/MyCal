@@ -1,4 +1,4 @@
-using MyCal.ApiService.Common.Model;
+using MyCal.Domain.Entity;
 
 namespace MyCal.Web.Clients.Profile;
 

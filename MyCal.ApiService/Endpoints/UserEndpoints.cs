@@ -1,13 +1,13 @@
 using FluentValidation;
-using MyCal.ApiService.Abstractions;
-using MyCal.ApiService.Common.Dto.User;
-using MyCal.ApiService.Common.Result;
-using MyCal.ApiService.Features.Users;
-using MyCal.ApiService.Features.Users.CreateUser;
-using MyCal.ApiService.Features.Users.DeleteUser;
-using MyCal.ApiService.Features.Users.GetUserById;
-using MyCal.ApiService.Features.Users.GetUsers;
-using MyCal.ApiService.Features.Users.UpdateUser;
+using MyCal.Domain.Abstractions;
+using MyCal.Application.Common.Dto.User;
+using MyCal.Application.Common.Result;
+using MyCal.Application.Features.Users;
+using MyCal.Application.Features.Users.CreateUser;
+using MyCal.Application.Features.Users.DeleteUser;
+using MyCal.Application.Features.Users.GetUserById;
+using MyCal.Application.Features.Users.GetUsers;
+using MyCal.Application.Features.Users.UpdateUser;
 
 namespace MyCal.ApiService.Endpoints;
 

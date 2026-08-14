@@ -1,7 +1,7 @@
 using System.Reflection.Metadata.Ecma335;
 using Microsoft.AspNetCore.Mvc;
-using MyCal.ApiService.Abstractions;
-using MyCal.ApiService.Features.Foods;
+using MyCal.Domain.Abstractions;
+using MyCal.Application.Features.Foods;
 
 namespace MyCal.ApiService.Endpoints;
 

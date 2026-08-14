@@ -3,9 +3,9 @@ using System.Net.Http.Json;
 using Aspire.Hosting;
 using Aspire.Hosting.Testing;
 using Microsoft.AspNetCore.Mvc;
-using MyCal.ApiService.Common.Enum;
-using MyCal.ApiService.Features.Users;
-using MyCal.ApiService.Features.Users.CreateUser;
+using MyCal.Domain.Enum;
+using MyCal.Application.Features.Users;
+using MyCal.Application.Features.Users.CreateUser;
 
 namespace MyCal.Tests;
 
@@ -37,8 +37,12 @@ public sealed class UserEndpointTests
     [ClassCleanup]
     public static async Task CleanupAsync()
     {
-        client.Dispose();
-        await app.DisposeAsync();
+        client?.Dispose();
+
+        if (app is not null)
+        {
+            await app.DisposeAsync();
+        }
     }
 
     [TestMethod]

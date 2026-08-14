@@ -1,6 +1,6 @@
-using MyCal.ApiService.Calculators;
-using MyCal.ApiService.Common.Enum;
-using MyCal.ApiService.Common.Model;
+using MyCal.Application.Calculators;
+using MyCal.Domain.Enum;
+using MyCal.Domain.Entity;
 
 namespace MyCal.Tests;
 
