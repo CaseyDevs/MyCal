@@ -18,6 +18,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyCal.Application", "MyCal.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyCal.Infrastructure", "MyCal.Infrastructure\MyCal.Infrastructure.csproj", "{6A7DB26B-ED01-447E-BFCF-16C35B6AABEF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyCal.Shared", "MyCal.Shared\MyCal.Shared.csproj", "{E0CF698C-C85A-4F9F-9616-79E7D1B915CF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -56,6 +58,10 @@ Global
 		{6A7DB26B-ED01-447E-BFCF-16C35B6AABEF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6A7DB26B-ED01-447E-BFCF-16C35B6AABEF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6A7DB26B-ED01-447E-BFCF-16C35B6AABEF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E0CF698C-C85A-4F9F-9616-79E7D1B915CF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E0CF698C-C85A-4F9F-9616-79E7D1B915CF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E0CF698C-C85A-4F9F-9616-79E7D1B915CF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E0CF698C-C85A-4F9F-9616-79E7D1B915CF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
