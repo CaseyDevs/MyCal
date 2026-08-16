@@ -1,6 +1,56 @@
-@page "/Log"
+@page "/log"
+@rendermode InteractiveServer
+
+@using System.Net
+@using MyCal.Shared.Dto.Food
+@using MyCal.Web.Clients.Food
+
+@inject IFoodApiClient client
+@attribute [Authorize]
+
 <h3>Log</h3>
 
+@* Searchbar  *@
+<div class="searchbar-container">
+    <input 
+        type="text" 
+        placeholder="Search"
+        @onchange="OnSearchTermChanged"
+        autofocus
+        maxlength="100" />
+    <button @onclick="HandleSearch">Search</button>
+</div>
+
+@if (_foodSearchResults is not null)
+{
+    @foreach (var result in _foodSearchResults)
+    {
+        <ul>
+            <li>@result.Name</li>
+        </ul>
+    }
+}
+
 @code {
+    private string _searchTerm = "";
+    private IReadOnlyList<FoodSearchResult>? _foodSearchResults;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _searchTerm = "";
+        _foodSearchResults = null;
+    }
     
+    private void OnSearchTermChanged(ChangeEventArgs e)
+    {
+        _searchTerm = (e.Value as string) ?? "";
+    }
+
+    private async Task HandleSearch()
+    {
+        var term = _searchTerm.Trim().ToLowerInvariant();
+        var result = await client.GetFoodsAsync(term);
+        _foodSearchResults = result;
+        _searchTerm = "";
+    }
 }

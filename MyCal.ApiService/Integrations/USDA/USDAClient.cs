@@ -1,5 +1,6 @@
 using MyCal.Application.Features.Foods;
 using MyCal.Application.Integrations;
+using MyCal.Shared.Dto.Food;
 
 namespace MyCal.ApiService.Integrations.USDA;
 

@@ -1,5 +1,6 @@
 using MyCal.Domain.Abstractions;
 using MyCal.Application.Integrations;
+using MyCal.Shared.Dto.Food;
 
 namespace MyCal.Application.Features.Foods;
 
