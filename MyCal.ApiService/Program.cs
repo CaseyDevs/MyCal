@@ -17,7 +17,7 @@ builder.Services.AddAuthorization();
 builder.Services.AddProblemDetails();
 builder.Services.AddApplication();
 
-builder.Services.AddHttpClient<IFoodCatalogClient, USDAClient>(
+builder.Services.AddHttpClient<IFoodCatalogClient, USDAFoodCatalogClient>(
     client =>
     {
         client.BaseAddress = new Uri("https://api.nal.usda.gov/fdc/v1/");

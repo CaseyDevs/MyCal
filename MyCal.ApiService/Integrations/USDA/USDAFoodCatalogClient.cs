@@ -4,7 +4,7 @@ using MyCal.Shared.Dto.Food;
 
 namespace MyCal.ApiService.Integrations.USDA;
 
-public sealed class USDAClient(
+public sealed class USDAFoodCatalogClient(
     HttpClient httpClient,
     IConfiguration configuration)
     : IFoodCatalogClient

@@ -9,18 +9,14 @@ namespace MyCal.Web.Clients.Food;
 /// <param name="http"></param>
 public class FoodApiClient(HttpClient http) : IFoodApiClient
 {
-    public async Task<List<FoodSearchResult>?> GetFoodsAsync(string term, CancellationToken cancellationToken = default!)
+    public async Task<IReadOnlyList<FoodSearchResult>> GetFoodsAsync(string term, CancellationToken cancellationToken = default!)
     {
         var response = await http.GetAsync(
             $"/foods?search={term}", cancellationToken);
         
-        if (response.StatusCode == HttpStatusCode.NotFound)
-        {
-            return null;
-        }
-        
         response.EnsureSuccessStatusCode();
         
-        return await response.Content.ReadFromJsonAsync<List<FoodSearchResult>>(cancellationToken);
+        var result = await response.Content.ReadFromJsonAsync<IReadOnlyList<FoodSearchResult>>(cancellationToken);
+        return result ?? [];
     }
 }
