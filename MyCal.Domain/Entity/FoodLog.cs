@@ -5,7 +5,7 @@ namespace MyCal.Domain.Entity;
 public class FoodLog : BaseEntity
 {
     public int UserId { get; set; }
-    public HashSet<Food> Foods { get; set; } = [];
+    public List<FoodLogEntry> Entries { get; set; } = [];
     public double TotalCalories { get; set; }
     public double? TotalProtein { get; set; }
     public double? TotalCarbohydrates { get; set; }
@@ -18,15 +18,15 @@ public static class FoodLogExtensions
     extension(FoodLog foodLog)
     {
         public double TotalCalories() => 
-            foodLog.Foods.Sum(food => food.Calories);
+            foodLog.Entries.Sum(entry => entry.Food.Calories);
 
         public double TotalProtein() => 
-            foodLog.Foods.Sum(food => food.Protein ?? 0);
+            foodLog.Entries.Sum(entry  => entry .Food.Protein ?? 0);
 
         public double TotalCarbohydrates() => 
-            foodLog.Foods.Sum(food => food.Carbohydrates ?? 0);
+            foodLog.Entries.Sum(entry => entry.Food.Carbohydrates ?? 0);
 
         public double TotalFats() => 
-            foodLog.Foods.Sum(food => food.Fats ?? 0);
+            foodLog.Entries.Sum(entry => entry.Food.Fats ?? 0);
     }
 }

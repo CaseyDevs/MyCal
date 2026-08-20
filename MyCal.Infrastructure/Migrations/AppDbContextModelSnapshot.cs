@@ -39,11 +39,11 @@ namespace MyCal.Infrastructure.Migrations
                     b.Property<double?>("Carbohydrates")
                         .HasColumnType("double precision");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<double?>("Fats")
                         .HasColumnType("double precision");
-
-                    b.Property<int?>("FoodLogId")
-                        .HasColumnType("integer");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -54,9 +54,7 @@ namespace MyCal.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("FoodLogId");
-
-                    b.ToTable("Food");
+                    b.ToTable("Food", (string)null);
                 });
 
             modelBuilder.Entity("MyCal.Domain.Entity.FoodLog", b =>
@@ -66,6 +64,9 @@ namespace MyCal.Infrastructure.Migrations
                         .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateOnly>("Date")
                         .HasColumnType("date");
@@ -92,7 +93,36 @@ namespace MyCal.Infrastructure.Migrations
                     b.HasIndex("UserId", "Date")
                         .IsUnique();
 
-                    b.ToTable("FoodLog");
+                    b.ToTable("FoodLog", (string)null);
+                });
+
+            modelBuilder.Entity("MyCal.Domain.Entity.FoodLogEntry", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("FoodId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("FoodLogId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("QuantityInGrams")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FoodId");
+
+                    b.HasIndex("FoodLogId");
+
+                    b.ToTable("FoodLogEntries", (string)null);
                 });
 
             modelBuilder.Entity("MyCal.Domain.Entity.User", b =>
@@ -156,13 +186,6 @@ namespace MyCal.Infrastructure.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("MyCal.Domain.Entity.Food", b =>
-                {
-                    b.HasOne("MyCal.Domain.Entity.FoodLog", null)
-                        .WithMany("Foods")
-                        .HasForeignKey("FoodLogId");
-                });
-
             modelBuilder.Entity("MyCal.Domain.Entity.FoodLog", b =>
                 {
                     b.HasOne("MyCal.Domain.Entity.User", null)
@@ -172,9 +195,28 @@ namespace MyCal.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("MyCal.Domain.Entity.FoodLogEntry", b =>
+                {
+                    b.HasOne("MyCal.Domain.Entity.Food", "Food")
+                        .WithMany()
+                        .HasForeignKey("FoodId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MyCal.Domain.Entity.FoodLog", "FoodLog")
+                        .WithMany("Entries")
+                        .HasForeignKey("FoodLogId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Food");
+
+                    b.Navigation("FoodLog");
+                });
+
             modelBuilder.Entity("MyCal.Domain.Entity.FoodLog", b =>
                 {
-                    b.Navigation("Foods");
+                    b.Navigation("Entries");
                 });
 
             modelBuilder.Entity("MyCal.Domain.Entity.User", b =>

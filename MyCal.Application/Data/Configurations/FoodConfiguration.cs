@@ -8,6 +8,8 @@ public class FoodConfiguration : IEntityTypeConfiguration<Food>
 {
     public void Configure(EntityTypeBuilder<Food> builder)
     {
+        builder.ToTable("Food");
+
         builder.HasKey(food => food.Id);
     }
 }

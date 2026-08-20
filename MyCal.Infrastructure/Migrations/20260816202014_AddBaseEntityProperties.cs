@@ -4,7 +4,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace MyCal.Application.Migrations
+namespace MyCal.Infrastructure.Migrations
 {
     /// <inheritdoc />
     public partial class AddBaseEntityProperties : Migration

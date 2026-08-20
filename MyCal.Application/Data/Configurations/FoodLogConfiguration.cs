@@ -8,6 +8,8 @@ public class FoodLogConfiguration : IEntityTypeConfiguration<FoodLog>
 {
     public void Configure(EntityTypeBuilder<FoodLog> builder)
     {
+        builder.ToTable("FoodLog");
+
         builder.HasKey(foodLog => foodLog.Id);
 
         builder.Property(foodLog => foodLog.UserId)
