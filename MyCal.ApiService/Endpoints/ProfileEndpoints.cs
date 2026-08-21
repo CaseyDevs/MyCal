@@ -33,7 +33,7 @@ public static class ProfileEndpoints
                     cancellationToken);
 
                 return result is null
-                    ? Results.NotFound()
+                    ? Results.NotFound(new { message = "Profile not found." })
                     : Results.Ok(result);
             });
 

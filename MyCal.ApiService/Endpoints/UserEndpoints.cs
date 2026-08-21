@@ -28,7 +28,9 @@ public static class UserEndpoints
             CancellationToken cancellationToken) =>
         {
             var user = await handler.HandleAsync(new GetUserByIdQuery(id), cancellationToken);
-            return user is null ? Results.NotFound() : Results.Ok(user);
+            return user is null
+                ? Results.NotFound(new { message = "User not found." })
+                : Results.Ok(user);
         });
 
         users.MapPost("/", async (
@@ -52,7 +54,7 @@ public static class UserEndpoints
                 {
                     "ProfileAlreadyExists" => Results.Conflict(new
                     {
-                        messsage = result.ErrorMessage
+                        message = result.ErrorMessage
                     }),
 
                     _ => Results.BadRequest(new
@@ -125,7 +127,7 @@ public static class UserEndpoints
 
             if (!result.IsSuccess)
             {
-                return Results.NotFound(result.ErrorMessage);
+                return Results.NotFound(new { message = result.ErrorMessage });
             }
 
             return Results.NoContent();

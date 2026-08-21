@@ -1,3 +1,4 @@
+using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using MyCal.Application.Common.Result;
 using MyCal.Application.Features.FoodLogs;
@@ -18,10 +19,19 @@ public static class FoodLogEndpoints
                 [FromRoute] int id,
                 [FromServices] IQueryHandler<GetFoodLogQuery, Result<FoodLog>> handler,
                 CancellationToken cancellationToken) =>
-            await handler.HandleAsync(new GetFoodLogQuery(id), cancellationToken));
+            {
+                var result = await handler.HandleAsync(
+                    new GetFoodLogQuery(id),
+                    cancellationToken);
+
+                return result.IsSuccess
+                    ? Results.Ok(result.Data)
+                    : Results.NotFound(new { message = result.ErrorMessage });
+            });
 
         foodLogs.MapPost("/", async (
             [FromBody] FoodLogRequest request,
+            [FromServices] IValidator<AddToFoodLogCommand> validator,
             [FromServices] ICommandHandler<AddToFoodLogCommand, Result> handler,
             CancellationToken cancellationToken) =>
         {
@@ -35,10 +45,17 @@ public static class FoodLogEndpoints
                 CarbohydratesPer100G: request.CarbohydratesPer100G,
                 FatsPer100G: request.FatsPer100G);
 
+            var validation = await validator.ValidateAsync(command, cancellationToken);
+
+            if (!validation.IsValid)
+            {
+                return Results.ValidationProblem(validation.ToDictionary());
+            }
+
             var result = await handler.HandleAsync(command, cancellationToken);
-            return result.IsSuccess 
+            return result.IsSuccess
                 ? Results.NoContent()
-                : Results.NotFound(result.ErrorMessage);
+                : Results.NotFound(new { message = result.ErrorMessage });
         });
 
         return app;
