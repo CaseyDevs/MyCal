@@ -18,15 +18,19 @@ public static class FoodLogExtensions
     extension(FoodLog foodLog)
     {
         public double TotalCalories() => 
-            foodLog.Entries.Sum(entry => entry.Food.Calories);
+            foodLog.Entries.Sum(entry => 
+                entry.Food.Calories * entry.QuantityInGrams / 100d);
 
-        public double TotalProtein() => 
-            foodLog.Entries.Sum(entry  => entry .Food.Protein ?? 0);
+        public double TotalProtein() =>
+            foodLog.Entries.Sum(entry =>
+                (entry.Food.Protein ?? 0) * entry.QuantityInGrams / 100d);
 
         public double TotalCarbohydrates() => 
-            foodLog.Entries.Sum(entry => entry.Food.Carbohydrates ?? 0);
+            foodLog.Entries.Sum(entry => 
+                (entry.Food.Carbohydrates ?? 0) * entry.QuantityInGrams / 100d);
 
         public double TotalFats() => 
-            foodLog.Entries.Sum(entry => entry.Food.Fats ?? 0);
+            foodLog.Entries.Sum(entry => 
+                (entry.Food.Fats ?? 0) * entry.QuantityInGrams / 100d);
     }
 }
