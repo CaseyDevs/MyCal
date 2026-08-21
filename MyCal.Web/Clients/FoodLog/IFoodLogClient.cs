@@ -1,5 +1,5 @@
 using MyCal.Shared.Dto;
-using MyCal.Shared.Dto.Food;
+using MyCal.Shared.Dto.FoodLog;
 
 namespace MyCal.Web.Clients.FoodLog;
 

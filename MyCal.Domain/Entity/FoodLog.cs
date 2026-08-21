@@ -17,20 +17,20 @@ public static class FoodLogExtensions
 {
     extension(FoodLog foodLog)
     {
-        public double TotalCalories() => 
-            foodLog.Entries.Sum(entry => 
+        public double CalculateTotalCalories() =>
+            foodLog.Entries.Sum(entry =>
                 entry.Food.Calories * entry.QuantityInGrams / 100d);
 
-        public double TotalProtein() =>
+        public double CalculateTotalProtein() =>
             foodLog.Entries.Sum(entry =>
-                (entry.Food.Protein ?? 0) * entry.QuantityInGrams / 100d);
+                (entry.Food.Protein ?? 0d) * entry.QuantityInGrams / 100d);
 
-        public double TotalCarbohydrates() => 
-            foodLog.Entries.Sum(entry => 
-                (entry.Food.Carbohydrates ?? 0) * entry.QuantityInGrams / 100d);
+        public double CalculateTotalCarbohydrates() =>
+            foodLog.Entries.Sum(entry =>
+                (entry.Food.Carbohydrates ?? 0d) * entry.QuantityInGrams / 100d);
 
-        public double TotalFats() => 
-            foodLog.Entries.Sum(entry => 
-                (entry.Food.Fats ?? 0) * entry.QuantityInGrams / 100d);
+        public double CalculateTotalFats() =>
+            foodLog.Entries.Sum(entry =>
+                (entry.Food.Fats ?? 0d) * entry.QuantityInGrams / 100d);
     }
 }

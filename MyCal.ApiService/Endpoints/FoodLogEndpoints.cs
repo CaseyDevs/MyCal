@@ -4,8 +4,8 @@ using MyCal.Application.Common.Result;
 using MyCal.Application.Features.FoodLogs;
 using MyCal.Application.Features.Foods;
 using MyCal.Domain.Abstractions;
-using MyCal.Domain.Entity;
 using MyCal.Shared.Dto;
+using MyCal.Shared.Dto.FoodLog;
 
 namespace MyCal.ApiService.Endpoints;
 
@@ -17,7 +17,7 @@ public static class FoodLogEndpoints
 
         foodLogs.MapGet("/{id:int}", async (
                 [FromRoute] int id,
-                [FromServices] IQueryHandler<GetFoodLogQuery, Result<FoodLog>> handler,
+                [FromServices] IQueryHandler<GetFoodLogQuery, Result<FoodLogResult>> handler,
                 CancellationToken cancellationToken) =>
             {
                 var result = await handler.HandleAsync(
