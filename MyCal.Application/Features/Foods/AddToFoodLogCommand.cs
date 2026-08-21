@@ -24,6 +24,24 @@ internal sealed class AddToFoodLogCommandHandler(
         AddToFoodLogCommand command, 
         CancellationToken cancellationToken)
     {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        
+        var foodLog = await context.FoodLogs
+            .Where(fl => fl.Id == command.FoodLogId && fl.Date == today)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (foodLog is null)
+        {
+            // create a new log for the day
+            foodLog = new FoodLog
+            {
+                Date = today,
+                UserId = command.FoodLogId
+            };
+            
+            context.FoodLogs.Add(foodLog);
+        }
+        
         var food = await context.Foods
             .Where(f => f.Name == command.Name
                 && f.Brand == command.Brand)
@@ -42,15 +60,6 @@ internal sealed class AddToFoodLogCommandHandler(
             };
             
             context.Foods.Add(food);
-        }
-        
-        var foodLog = await context.FoodLogs
-            .Where(fl => fl.Id == command.FoodLogId)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (foodLog is null)
-        {
-            return Result.Fail("Food log does not exist.");
         }
         
         var entry = new FoodLogEntry
