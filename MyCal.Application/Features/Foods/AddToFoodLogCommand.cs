@@ -1,3 +1,4 @@
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using MyCal.Application.Common.Result;
 using MyCal.Application.Data;
@@ -7,7 +8,7 @@ using MyCal.Domain.Entity;
 namespace MyCal.Application.Features.Foods;
 
 public sealed record AddToFoodLogCommand(
-    int FoodLogId,
+    int UserId,
     string Name,
     string? Brand,
     int QuantityInGrams,
@@ -27,18 +28,20 @@ internal sealed class AddToFoodLogCommandHandler(
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         
         var foodLog = await context.FoodLogs
-            .Where(fl => fl.Id == command.FoodLogId && fl.Date == today)
-            .FirstOrDefaultAsync(cancellationToken);
+            .SingleOrDefaultAsync(log => log.UserId == command.UserId && log.Date == today, cancellationToken);
 
         if (foodLog is null)
         {
-            // create a new log for the day
-            foodLog = new FoodLog
+            var userExists = await context.Users.AnyAsync(
+                user => user.Id == command.UserId,
+                cancellationToken);
+
+            if (!userExists)
             {
-                Date = today,
-                UserId = command.FoodLogId
-            };
-            
+                return Result.Fail("User does not exist.");
+            }
+
+            foodLog = FoodLogHelpers.CreateFoodLog(command.UserId, today);
             context.FoodLogs.Add(foodLog);
         }
         
@@ -73,5 +76,21 @@ internal sealed class AddToFoodLogCommandHandler(
         await context.SaveChangesAsync(cancellationToken);
 
         return Result.Success(null);
+    }
+}
+
+public sealed class AddToFoodLogCommandValidator
+    : AbstractValidator<AddToFoodLogCommand>
+{
+    public AddToFoodLogCommandValidator()
+    {
+        RuleFor(command => command.UserId).GreaterThan(0);
+        RuleFor(command => command.Name).NotEmpty().MaximumLength(200);
+        RuleFor(command => command.Brand).MaximumLength(200);
+        RuleFor(command => command.QuantityInGrams).GreaterThan(0);
+        RuleFor(command => command.CaloriesPer100G).GreaterThanOrEqualTo(0);
+        RuleFor(command => command.ProteinPer100G).GreaterThanOrEqualTo(0);
+        RuleFor(command => command.CarbohydratesPer100G).GreaterThanOrEqualTo(0);
+        RuleFor(command => command.FatsPer100G).GreaterThanOrEqualTo(0);
     }
 }

@@ -1,7 +1,7 @@
 namespace MyCal.Shared.Dto;
 
 public record FoodLogRequest(
-    int FoodLogId,
+    int UserId,
     string Name,
     string? Brand,
     int QuantityInGrams,

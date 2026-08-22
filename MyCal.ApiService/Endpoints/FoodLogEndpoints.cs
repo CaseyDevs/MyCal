@@ -16,18 +16,32 @@ public static class FoodLogEndpoints
         var foodLogs = app.MapGroup("/food-logs");
 
         foodLogs.MapGet("/{id:int}", async (
-                [FromRoute] int id,
-                [FromServices] IQueryHandler<GetFoodLogQuery, Result<FoodLogResult>> handler,
-                CancellationToken cancellationToken) =>
-            {
-                var result = await handler.HandleAsync(
-                    new GetFoodLogQuery(id),
-                    cancellationToken);
+            [FromRoute] int id,
+            [FromServices] IQueryHandler<GetFoodLogQuery, Result<FoodLogResult>> handler,
+            CancellationToken cancellationToken) =>
+        {
+            var result = await handler.HandleAsync(
+                new GetFoodLogQuery(id),
+                cancellationToken);
 
-                return result.IsSuccess
-                    ? Results.Ok(result.Data)
-                    : Results.NotFound(new { message = result.ErrorMessage });
-            });
+            return result.IsSuccess
+                ? Results.Ok(result.Data)
+                : Results.NotFound(new { message = result.ErrorMessage });
+        });
+
+        foodLogs.MapGet("/today/{userId:int}", async (
+            [FromRoute] int userId,
+            [FromServices] IQueryHandler<GetTodaysLogQuery, Result<FoodLogResult>> handler,
+            CancellationToken cancellationToken) =>
+        {
+            var result = await handler.HandleAsync(
+                new GetTodaysLogQuery(userId),
+                cancellationToken);
+
+            return result.IsSuccess
+                ? Results.Ok(result.Data)
+                : Results.NotFound(new { message = result.ErrorMessage });
+        });
 
         foodLogs.MapPost("/", async (
             [FromBody] FoodLogRequest request,
@@ -36,7 +50,7 @@ public static class FoodLogEndpoints
             CancellationToken cancellationToken) =>
         {
             var command = new AddToFoodLogCommand(
-                FoodLogId: request.FoodLogId,
+                UserId: request.UserId,
                 Name: request.Name,
                 Brand: request.Brand,
                 QuantityInGrams: request.QuantityInGrams,
