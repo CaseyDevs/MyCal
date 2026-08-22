@@ -12,7 +12,7 @@ public class FoodApiClient(HttpClient http) : IFoodApiClient
     public async Task<IReadOnlyList<FoodSearchResult>> GetFoodsAsync(string term, CancellationToken cancellationToken = default!)
     {
         var response = await http.GetAsync(
-            $"/foods?search={term}", cancellationToken);
+            $"/foods?search={Uri.EscapeDataString(term)}", cancellationToken);
         
         response.EnsureSuccessStatusCode();
         

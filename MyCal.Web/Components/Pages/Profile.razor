@@ -31,7 +31,9 @@ else
             <ul>
                 @foreach (var log in _profile.FoodLogs)
                 {
-                    <li>@log.Date</li>
+                    <li>
+                        <a href="@($"/log/{log.Id}")">@log.Date</a>
+                    </li>
                 }
             </ul>
         }
