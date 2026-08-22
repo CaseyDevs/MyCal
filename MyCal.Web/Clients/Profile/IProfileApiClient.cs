@@ -1,4 +1,5 @@
 using MyCal.Domain.Entity;
+using MyCal.Shared.Dto.FoodLog;
 
 namespace MyCal.Web.Clients.Profile;
 
@@ -25,7 +26,7 @@ public sealed record UserProfileRequest(
 
 public sealed record UserProfileResponse(
     int Id,
-    List<FoodLog> FoodLogs,
+    List<FoodLogResult> FoodLogs,
     string Name,
     string Email,
     double HeightInCm,

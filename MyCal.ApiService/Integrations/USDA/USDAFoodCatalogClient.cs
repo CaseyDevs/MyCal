@@ -4,12 +4,12 @@ using MyCal.Shared.Dto.Food;
 
 namespace MyCal.ApiService.Integrations.USDA;
 
-public sealed class USDAFoodCatalogClient(
+public sealed class UsdaFoodCatalogClient(
     HttpClient httpClient,
     IConfiguration configuration)
     : IFoodCatalogClient
 {
-    private readonly string apiKey =
+    private readonly string _apiKey =
         configuration["UsdaFoodData:ApiKey"]
         ?? throw new InvalidOperationException(
             "USDA API key is not configured.");
@@ -18,12 +18,12 @@ public sealed class USDAFoodCatalogClient(
         string query,
         CancellationToken cancellationToken)
     {
-
         var url =
             $"foods/search" +
             $"?query={Uri.EscapeDataString(query)}" +
+            $"&dataType=Foundation" +
             $"&pageSize=10" +
-            $"&api_key={apiKey}";
+            $"&api_key={_apiKey}";
 
         var response = await httpClient.GetFromJsonAsync<UsdaFoodSearchResponse>(
             url,
@@ -72,4 +72,3 @@ public sealed class USDAFoodCatalogClient(
         string? UnitName,
         double? Value);
 }
-
