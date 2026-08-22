@@ -1,4 +1,4 @@
-namespace MyCal.Application.Features.Foods;
+namespace MyCal.Shared.Dto.Food;
 
 public sealed record FoodSearchResult(
     string ExternalId,

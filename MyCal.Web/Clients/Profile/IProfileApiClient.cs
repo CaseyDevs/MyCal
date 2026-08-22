@@ -25,7 +25,7 @@ public sealed record UserProfileRequest(
 
 public sealed record UserProfileResponse(
     int Id,
-    List<FoodLog> FoodLogs,
+    List<FoodLogSummaryResponse> FoodLogs,
     string Name,
     string Email,
     double HeightInCm,
@@ -39,6 +39,10 @@ public sealed record UserProfileResponse(
     DateTime? UpdatedAt,
     DateTime CreatedAt
 );
+
+public sealed record FoodLogSummaryResponse(
+    int Id,
+    DateOnly Date);
 
 public enum Gender
 {

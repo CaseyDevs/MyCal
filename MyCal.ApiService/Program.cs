@@ -4,6 +4,7 @@ using MyCal.Application.Data;
 using MyCal.Application.Integrations;
 using MyCal.ApiService.Endpoints;
 using MyCal.ApiService.Integrations.USDA;
+using MyCal.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,13 +18,16 @@ builder.Services.AddAuthorization();
 builder.Services.AddProblemDetails();
 builder.Services.AddApplication();
 
-builder.Services.AddHttpClient<IFoodCatalogClient, USDAClient>(
-    client =>
-    {
-        client.BaseAddress = new Uri("https://api.nal.usda.gov/fdc/v1/");
-    });
+builder.Services.AddHttpClient<IFoodCatalogClient, UsdaFoodCatalogClient>(client =>
+{
+    client.BaseAddress = new Uri("https://api.nal.usda.gov/fdc/v1/");
+});
 
-builder.AddNpgsqlDbContext<AppDbContext>("postgresdb");
+builder.AddNpgsqlDbContext<AppDbContext>(
+    "postgresdb",
+    configureDbContextOptions: options => options.UseNpgsql(npgsql =>
+        npgsql.MigrationsAssembly(typeof(InfrastructureAssemblyMaker).Assembly
+            .FullName))); // save migrations to infrastructure assembly
 
 var app = builder.Build();
 
@@ -43,6 +47,7 @@ app.MapGet("/", () => "API service is running.");
 app.MapUserEndpoints();
 app.MapFoodEndpoints();
 app.MapProfileEndpoints();
+app.MapFoodLogEndpoints();
 
 app.MapDefaultEndpoints();
 

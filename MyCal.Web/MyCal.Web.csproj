@@ -9,6 +9,7 @@
   <ItemGroup>
     <ProjectReference Include="..\MyCal.Domain\MyCal.Domain.csproj" />
     <ProjectReference Include="..\MyCal.ServiceDefaults\MyCal.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\MyCal.Shared\MyCal.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>

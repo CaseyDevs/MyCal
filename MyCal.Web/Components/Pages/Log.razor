@@ -1,0 +1,317 @@
+@page "/log"
+@page "/log/{LogId:int}"
+@rendermode InteractiveServer
+
+@using MyCal.Shared.Dto
+@using MyCal.Shared.Dto.Food
+@using MyCal.Shared.Dto.FoodLog
+@using MyCal.Web.Clients.Food
+@using MyCal.Web.Clients.FoodLog
+@using MyCal.Web.Clients.Profile
+
+@inject IFoodApiClient FoodApiClient
+@inject IFoodLogClient FoodLogClient
+@inject IProfileApiClient ProfileApiClient
+@inject NavigationManager NavigationManager
+@attribute [Authorize]
+
+<PageTitle>Food log</PageTitle>
+
+<h1>Food log</h1>
+
+@if (_isLoading)
+{
+    <p><em>Loading...</em></p>
+}
+else if (_errorMessage is not null)
+{
+    <div class="alert alert-danger" role="alert">@_errorMessage</div>
+}
+else if (_foodLog is not null)
+{
+    <h2>@_foodLog.Date</h2>
+
+    <div class="mb-4">
+        <strong>Totals:</strong>
+        @_foodLog.TotalCalories.ToString("0.#") calories,
+        @_foodLog.TotalProtein.ToString("0.#") g protein,
+        @_foodLog.TotalCarbohydrates.ToString("0.#") g carbohydrates,
+        @_foodLog.TotalFats.ToString("0.#") g fat
+    </div>
+
+    @if (_foodLog.Entries.Count == 0)
+    {
+        <p>No food logged yet.</p>
+    }
+    else
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Food</th>
+                    <th>Quantity</th>
+                    <th>Calories</th>
+                    <th>Protein</th>
+                    <th>Carbohydrates</th>
+                    <th>Fat</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var entry in _foodLog.Entries)
+                {
+                    <tr>
+                        <td>
+                            @entry.Name
+                            @if (!string.IsNullOrWhiteSpace(entry.Brand))
+                            {
+                                <span class="text-muted">— @entry.Brand</span>
+                            }
+                        </td>
+                        <td>@entry.QuantityInGrams g</td>
+                        <td>@entry.Calories.ToString("0.#")</td>
+                        <td>@entry.Protein.ToString("0.#") g</td>
+                        <td>@entry.Carbohydrates.ToString("0.#") g</td>
+                        <td>@entry.Fats.ToString("0.#") g</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    @if (LogId is null)
+    {
+        <hr />
+        <h2>Add food</h2>
+
+        <div class="input-group mb-3">
+            <input class="form-control"
+                   type="search"
+                   placeholder="Search foods"
+                   maxlength="100"
+                   @bind="_searchTerm"
+                   @bind:event="oninput"
+                   @onkeydown="HandleSearchKeyDown" />
+            <button class="btn btn-primary"
+                    type="button"
+                    disabled="@_isSearching"
+                    @onclick="HandleSearchAsync">
+                @(_isSearching ? "Searching..." : "Search")
+            </button>
+        </div>
+
+        @if (_searchErrorMessage is not null)
+        {
+            <div class="alert alert-danger" role="alert">@_searchErrorMessage</div>
+        }
+
+        @if (_foodSearchResults is not null && _foodSearchResults.Count == 0)
+        {
+            <p>No foods found.</p>
+        }
+        else if (_foodSearchResults is not null)
+        {
+            <ul class="list-group mb-4">
+                @foreach (var result in _foodSearchResults)
+                {
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>
+                            @result.Name
+                            @if (!string.IsNullOrWhiteSpace(result.Brand))
+                            {
+                                <span class="text-muted">— @result.Brand</span>
+                            }
+                        </span>
+                        <button class="btn btn-outline-primary btn-sm"
+                                type="button"
+                                @onclick="() => SelectFood(result)">
+                            Select
+                        </button>
+                    </li>
+                }
+            </ul>
+        }
+
+        @if (_selectedFood is not null)
+        {
+            <div class="card">
+                <div class="card-body">
+                    <h3 class="card-title h5">@_selectedFood.Name</h3>
+                    @if (!string.IsNullOrWhiteSpace(_selectedFood.Brand))
+                    {
+                        <p class="card-subtitle mb-3 text-muted">@_selectedFood.Brand</p>
+                    }
+
+                    <label class="form-label" for="quantityInGrams">Quantity in grams</label>
+                    <input id="quantityInGrams"
+                           class="form-control mb-3"
+                           type="number"
+                           min="1"
+                           step="1"
+                           @bind="_quantityInGrams" />
+
+                    <button class="btn btn-success"
+                            type="button"
+                            disabled="@(_isAdding || _quantityInGrams <= 0)"
+                            @onclick="AddSelectedFoodAsync">
+                        @(_isAdding ? "Adding..." : "Add to today's log")
+                    </button>
+                </div>
+            </div>
+        }
+    }
+}
+
+@code {
+    [Parameter] public int? LogId { get; set; }
+
+    private int? _userId;
+    private string _searchTerm = string.Empty;
+    private int _quantityInGrams = 100;
+    private FoodLogResult? _foodLog;
+    private FoodSearchResult? _selectedFood;
+    private IReadOnlyList<FoodSearchResult>? _foodSearchResults;
+    private string? _errorMessage;
+    private string? _searchErrorMessage;
+    private bool _isLoading = true;
+    private bool _isSearching;
+    private bool _isAdding;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _isLoading = true;
+        _errorMessage = null;
+
+        try
+        {
+            var profile = await ProfileApiClient.GetUserProfileAsync(
+                CancellationToken.None);
+
+            if (profile is null)
+            {
+                NavigationManager.NavigateTo("/profile-setup");
+                return;
+            }
+
+            _userId = profile.Id;
+
+            if (LogId is int logId)
+            {
+            var belongsToCurrentUser = profile.FoodLogs.Any(log => log.Id == logId);
+
+                if (!belongsToCurrentUser)
+                {
+                    _errorMessage = "That food log could not be found.";
+                    return;
+                }
+
+                _foodLog = await FoodLogClient.GetFoodLogAsync(
+                    logId,
+                    CancellationToken.None);
+            }
+            else
+            {
+                _foodLog = await FoodLogClient.GetTodaysFoodLogAsync(
+                    profile.Id,
+                    CancellationToken.None);
+            }
+        }
+        catch (HttpRequestException)
+        {
+            _errorMessage = "Your food log could not be loaded. Please try again.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task HandleSearchAsync()
+    {
+        var term = _searchTerm.Trim();
+
+        if (string.IsNullOrWhiteSpace(term))
+        {
+            _foodSearchResults = [];
+            return;
+        }
+
+        _isSearching = true;
+        _searchErrorMessage = null;
+        _selectedFood = null;
+
+        try
+        {
+            _foodSearchResults = await FoodApiClient.GetFoodsAsync(
+                term,
+                CancellationToken.None);
+        }
+        catch (HttpRequestException)
+        {
+            _foodSearchResults = null;
+            _searchErrorMessage = "Foods could not be searched. Please try again.";
+        }
+        finally
+        {
+            _isSearching = false;
+        }
+    }
+
+    private async Task HandleSearchKeyDown(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter")
+        {
+            await HandleSearchAsync();
+        }
+    }
+
+    private void SelectFood(FoodSearchResult food)
+    {
+        _selectedFood = food;
+        _quantityInGrams = 100;
+        _searchErrorMessage = null;
+    }
+
+    private async Task AddSelectedFoodAsync()
+    {
+        if (_selectedFood is null || _userId is null || _quantityInGrams <= 0)
+        {
+            return;
+        }
+
+        _isAdding = true;
+        _searchErrorMessage = null;
+
+        try
+        {
+            var request = new FoodLogRequest(
+                UserId: _userId.Value,
+                Name: _selectedFood.Name,
+                Brand: _selectedFood.Brand,
+                QuantityInGrams: _quantityInGrams,
+                CaloriesPer100G: _selectedFood.CaloriesPer100g,
+                ProteinPer100G: _selectedFood.ProteinPer100g,
+                CarbohydratesPer100G: _selectedFood.CarbohydratesPer100g,
+                FatsPer100G: _selectedFood.FatPer100g);
+
+            await FoodLogClient.AddToFoodLogAsync(
+                request,
+                CancellationToken.None);
+
+            _foodLog = await FoodLogClient.GetTodaysFoodLogAsync(
+                _userId.Value,
+                CancellationToken.None);
+
+            _selectedFood = null;
+            _foodSearchResults = null;
+            _searchTerm = string.Empty;
+        }
+        catch (HttpRequestException)
+        {
+            _searchErrorMessage = "The food could not be added. Please try again.";
+        }
+        finally
+        {
+            _isAdding = false;
+        }
+    }
+}

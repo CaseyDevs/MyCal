@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using MyCal.Web;
+using MyCal.Web.Clients.Food;
+using MyCal.Web.Clients.FoodLog;
 using MyCal.Web.Clients.Profile;
 using MyCal.Web.Components;
 using MyCal.Web.Components.Account;
@@ -21,11 +23,20 @@ builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuth
 
 builder.Services.AddScoped<IdentityRedirectManager>();
 
-builder.Services.AddHttpClient<IProfileApiClient, ProfileApiClient>(
-    client =>
-    {
-        client.BaseAddress = new Uri("https+http://apiservice");
-    });
+builder.Services.AddHttpClient<IProfileApiClient, ProfileApiClient>(client =>
+{
+    client.BaseAddress = new Uri("https+http://apiservice");
+});
+
+builder.Services.AddHttpClient<IFoodApiClient, FoodApiClient>(client =>
+{
+    client.BaseAddress = new Uri("https+http://apiservice");
+});
+
+builder.Services.AddHttpClient<IFoodLogClient, FoodLogClient>(client =>
+{
+    client.BaseAddress = new Uri("https+http://apiservice");
+});
 
 builder.Services.AddSingleton<
     IEmailSender<ApplicationUser>,
@@ -84,13 +95,13 @@ app.MapRazorComponents<App>()
 app.MapDefaultEndpoints();
 
 app.MapPost("/Account/Logout", async (
-    SignInManager<ApplicationUser> signInManager,
-    [FromForm] string returnUrl) =>
-{
-    await signInManager.SignOutAsync();
+        SignInManager<ApplicationUser> signInManager,
+        [FromForm] string returnUrl) =>
+    {
+        await signInManager.SignOutAsync();
 
-    return TypedResults.LocalRedirect($"~/{returnUrl}");
-})
-.RequireAuthorization();
+        return TypedResults.LocalRedirect($"~/{returnUrl}");
+    })
+    .RequireAuthorization();
 
 app.Run();
