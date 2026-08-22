@@ -1,13 +1,8 @@
 using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
-using MyCal.Web;
 using MyCal.Web.Clients.Food;
 using MyCal.Web.Clients.FoodLog;
 using MyCal.Web.Clients.Profile;
 using MyCal.Web.Components;
-using MyCal.Web.Components.Account;
-using MyCal.Web.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,9 +14,9 @@ builder.AddRedisOutputCache("cache");
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
-
-builder.Services.AddScoped<IdentityRedirectManager>();
+builder.Services.AddAuthentication();
+builder.Services.AddAuthorization();
+builder.Services.AddCascadingAuthenticationState();
 
 builder.Services.AddHttpClient<IProfileApiClient, ProfileApiClient>(client =>
 {
@@ -37,35 +32,6 @@ builder.Services.AddHttpClient<IFoodLogClient, FoodLogClient>(client =>
 {
     client.BaseAddress = new Uri("https+http://apiservice");
 });
-
-builder.Services.AddSingleton<
-    IEmailSender<ApplicationUser>,
-    IdentityNoOpEmailSender>();
-
-// ------------------ ASP.NET Identity (auth) config -----------------
-builder.Services.AddAuthentication(options =>
-    {
-        options.DefaultScheme = IdentityConstants.ApplicationScheme;
-        options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
-    })
-    .AddIdentityCookies();
-
-builder.Services
-    .AddIdentityCore<ApplicationUser>(options =>
-    {
-        options.SignIn.RequireConfirmedAccount = true;
-        options.User.RequireUniqueEmail = true;
-        options.Stores.SchemaVersion = IdentitySchemaVersions.Version3;
-    })
-    .AddEntityFrameworkStores<ApplicationDbContext>()
-    .AddSignInManager()
-    .AddDefaultTokenProviders();
-
-builder.Services.AddAuthorization();
-builder.Services.AddCascadingAuthenticationState();
-// ----------------------------------------------------------------------
-
-builder.AddNpgsqlDbContext<ApplicationDbContext>("identitydb");
 
 var app = builder.Build();
 
@@ -93,15 +59,5 @@ app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
 app.MapDefaultEndpoints();
-
-app.MapPost("/Account/Logout", async (
-        SignInManager<ApplicationUser> signInManager,
-        [FromForm] string returnUrl) =>
-    {
-        await signInManager.SignOutAsync();
-
-        return TypedResults.LocalRedirect($"~/{returnUrl}");
-    })
-    .RequireAuthorization();
 
 app.Run();
