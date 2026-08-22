@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MyCal.ApiService\MyCal.ApiService.csproj" />
+    <ProjectReference Include="..\MyCal.AuthService\MyCal.AuthService.csproj" />
     <ProjectReference Include="..\MyCal.Web\MyCal.Web.csproj" />
   </ItemGroup>
 

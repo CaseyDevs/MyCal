@@ -20,13 +20,17 @@ var apiService = builder.AddProject<Projects.MyCal_ApiService>("apiservice")
     .WaitFor(postgresdb)
     .WithHttpHealthCheck("/health");
 
+builder.AddProject<Projects.MyCal_AuthService>("authservice")
+    .WithExternalHttpEndpoints()
+    .WithHttpHealthCheck("/health")
+    .WithReference(identitydb)
+    .WaitFor(identitydb);
+
 var webFrontend = builder.AddProject<Projects.MyCal_Web>("webfrontend")
     .WithExternalHttpEndpoints()
     .WithHttpHealthCheck("/health")
     .WithReference(cache)
     .WaitFor(cache)
-    .WithReference(identitydb)
-    .WaitFor(identitydb)
     .WithReference(apiService)
     .WaitFor(apiService);
   
