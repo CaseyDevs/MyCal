@@ -1,0 +1,24 @@
+@page "/"
+
+<PageTitle>MyCal authentication</PageTitle>
+
+<h1>MyCal authentication</h1>
+
+<AuthorizeView>
+    <Authorized>
+        <p>Signed in as @context.User.Identity?.Name.</p>
+
+        <form action="Account/Logout" method="post">
+            <AntiforgeryToken />
+            <input type="hidden" name="returnUrl" value="" />
+            <button type="submit" class="btn btn-primary">Log out</button>
+        </form>
+    </Authorized>
+    <NotAuthorized>
+        <p>
+            <a href="Account/Login">Log in</a>
+            or
+            <a href="Account/Register">register</a>.
+        </p>
+    </NotAuthorized>
+</AuthorizeView>
