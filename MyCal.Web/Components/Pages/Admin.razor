@@ -1,0 +1,30 @@
+@page "/admin"
+@attribute [Authorize]
+@inherits TrackerPage
+<PageTitle>Beta access · MyCal</PageTitle>
+<header class="page-heading">
+<div>
+<p class="eyebrow">PRIVATE BETA</p>
+<h1>A little room for friends.</h1>
+<p class="muted">Manage access. Everyone's nutrition records stay private.</p>
+</div>
+</header>
+@if (Error is not null) { <div class="notice error" role="alert">@Error</div> }
+@if (_admin) { <section class="panel settings-panel narrow">
+<h2>Invitation or recovery</h2>
+<form @onsubmit="Issue" @onsubmit:preventDefault="true">
+<label>Email address<input type="email" @bind="_email" required maxlength="256" />
+</label>
+<label>Link type<select @bind="_recovery">
+<option value="false">Invite a new person · 72 hours</option>
+<option value="true">Recover an existing account · 30 minutes</option>
+</select>
+</label>
+<button class="button primary" disabled="@Busy">Create single-use link</button>
+</form>@if (_link is not null) { <div class="notice">
+<label>Share privately with this person<input class="link-output" readonly value="@_link" @onclick="SelectLink" @ref="_linkInput" />
+</label>
+<p class="small">Anyone with this link can set the account's password. Verify the recipient before sharing. The token is stored hashed and works once.</p>
+</div> }
+<p class="muted small">You can support more than five accounts. This beta has no hard five-person limit.</p>
+</section> }

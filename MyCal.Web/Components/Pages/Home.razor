@@ -1,7 +1,171 @@
-﻿@page "/"
-
-<PageTitle>Home</PageTitle>
-
-<h1>Hello, world!</h1>
-
-Welcome to your new app.
+@page "/"
+@page "/log"
+@page "/diary/{DateText}"
+@attribute [Authorize]
+@inherits TrackerPage
+<PageTitle>Today · MyCal</PageTitle>
+<header class="page-heading">
+<div>
+<p class="eyebrow">YOUR DAILY PICTURE</p>
+<h1>@(_day is not null && _day.Date == _today ? "A fresh view of today." : "Every day tells a story.")</h1>
+<p class="muted">@(_day is not null ? _day.Date.ToString("dddd, d MMMM yyyy") : "Your nutrition, at a glance.")</p>
+</div>
+<div class="heading-actions">
+<span class="avatar">@(UserProfile?.Name.FirstOrDefault().ToString().ToUpperInvariant() ?? "M")</span>
+</div>
+</header>
+@if (Error is not null) { <div class="notice error" role="alert">@Error <button class="text-button" @onclick="Reload">Try again</button>
+</div> }
+@if (_day is null) { <div class="skeleton panel" role="status">Loading your diary…</div> }
+else
+{
+    <div class="day-toolbar">
+<div class="date-switcher">
+<button class="icon-button" aria-label="Previous day" @onclick="() => Go(_day.Date.AddDays(-1))">
+<span aria-hidden="true">‹</span>
+</button>
+<input type="date" aria-label="Diary date" value="@_day.Date.ToString("yyyy-MM-dd")" max="@_today.ToString("yyyy-MM-dd")" @onchange="ChangeDate" />
+<button class="icon-button" aria-label="Next day" disabled="@(_day.Date >= _today)" @onclick="() => Go(_day.Date.AddDays(1))">›</button>
+</div>
+<button class="button primary" @onclick="() => OpenFood(Meal.Snacks)">
+<Icon Name="plus" />Add food</button>
+</div>
+    <div class="dashboard-top">
+<section class="panel calorie-panel">
+<div class="section-heading">
+<h2>Daily energy</h2>
+<span class="tag">kcal</span>
+</div>
+    <div class="energy-body">
+<div class="energy-copy">
+<p class="muted small">CONSUMED</p>
+<div class="energy-value">@_day.Totals.Calories.ToString("N0")<span>kcal</span>
+</div>
+<p class="energy-remaining">@(_day.Target is null ? "Set a target to see your progress" : _day.Totals.Calories > _day.Target.Calories ? $"{(_day.Totals.Calories - _day.Target.Calories):N0} over target" : $"{(_day.Target.Calories - _day.Totals.Calories):N0} remaining")</p>
+<div class="energy-legend">
+<span>
+<i>
+</i>Consumed</span>
+<span>
+<i>
+</i>Remaining</span>
+</div>
+</div>
+    <div class="energy-ring" style="@RingStyle" role="img" aria-label="@($"{_day.Totals.Calories:0} calories consumed of {_day.Target?.Calories:0}")">
+<div>
+<span>DAILY TARGET</span>
+<strong>@(_day.Target?.Calories.ToString("N0") ?? "—")</strong>
+<small>kcal</small>
+</div>
+</div>
+</div>
+    <div class="energy-foot">
+<span class="dot">
+</span>@(_day.Status == DiaryStatus.Incomplete ? "Your day is still in progress" : _day.Status == DiaryStatus.ConfirmedZero ? "Zero intake explicitly confirmed" : "All food logged · day complete")</div>
+</section>
+    <section class="panel week-panel">
+<div class="section-heading">
+<h2>A little consistency.</h2>
+<a href="/history" class="text-button">History ↗</a>
+</div>
+<p class="muted small">Your last seven days</p>
+<div class="week-chart">@foreach (var day in _week.OrderBy(x => x.Date)) { <a class="week-column" href="@($"/diary/{day.Date:yyyy-MM-dd}")" title="@($"{day.Date:d MMM}: {day.Calories:0} kcal")">
+<span class="week-bar-wrap">
+<span class="week-bar @(day.Status == DiaryStatus.Incomplete ? "incomplete" : "")" style="@BarStyle(day)">
+</span>
+</span>
+<small>@day.Date.ToString("ddd")[..1]</small>
+</a> }
+</div>
+<div class="week-caption">
+<strong>@_week.Count(x => x.Status != DiaryStatus.Incomplete)<span> / 7</span>
+</strong>
+<span class="muted small">days marked complete</span>
+</div>
+</section>
+</div>
+    @if (_day.Target is { } target) { <div class="macro-grid">
+<MacroProgress Label="Protein" Colour="protein" Value="_day.Totals.Protein" Target="target.Protein" Partial="_day.Totals.ProteinIncomplete" />
+<MacroProgress Label="Carbohydrate" Colour="carbs" Value="_day.Totals.Carbohydrates" Target="target.Carbohydrates" Partial="_day.Totals.CarbohydratesIncomplete" />
+<MacroProgress Label="Fat" Colour="fat" Value="_day.Totals.Fat" Target="target.Fat" Partial="_day.Totals.FatIncomplete" />
+</div> }
+    else { <div class="notice">No historical target was saved for this date. Your recorded food remains available. <a href="/settings">Set targets →</a>
+</div> }
+    <section class="diary-section">
+<div class="section-heading">
+<div>
+<p class="eyebrow">ONE ENTRY AT A TIME</p>
+<h2>Your food diary</h2>
+</div>
+<span class="muted small">@_day.Entries.Count entries</span>
+</div>
+    @foreach (var meal in Enum.GetValues<Meal>())
+    {
+        var entries = _day.Entries.Where(x => x.Meal == meal).ToList();
+        <section class="panel meal-panel">
+<header class="meal-header">
+<div>
+<span class="meal-symbol">@MealSymbol(meal)</span>
+<h3>@meal</h3>
+<span class="muted small">@entries.Sum(x => x.Totals.Calories).ToString("0") kcal</span>
+</div>
+<button class="icon-button" aria-label="Add to @meal" @onclick="() => OpenFood(meal)">
+<Icon Name="plus" />
+</button>
+</header>
+        @if (entries.Count == 0) { <button class="empty-meal" @onclick="() => OpenFood(meal)">Add food to @meal.ToString().ToLowerInvariant()<span>＋</span>
+</button> }
+        @foreach (var entry in entries)
+        {
+            <div class="diary-row">
+<span class="food-avatar">@entry.Food.Name[..1].ToUpperInvariant()</span>
+<div class="entry-description">
+<strong>@entry.Food.Name</strong>
+<small>@Number(entry.Amount) @Unit(entry.Food.Unit) @(entry.Food.Brand is null ? "" : "· " + entry.Food.Brand)</small>
+<small class="entry-macros">P @Macro(entry.Food.Protein, entry.Totals.Protein) · C @Macro(entry.Food.Carbohydrates, entry.Totals.Carbohydrates) · F @Macro(entry.Food.Fat, entry.Totals.Fat)</small>
+</div>
+<strong class="entry-calories">@entry.Totals.Calories.ToString("0")<small>kcal</small>
+</strong>
+<button class="text-button entry-edit" @onclick="() => Edit(entry)">Edit</button>
+</div>
+            @if (_editing == entry.Id)
+            { <div class="entry-editor">
+<label>Quantity<input type="number" step="any" min="0.01" @bind="_editAmount" />
+</label>
+<label>Meal<select @bind="_editMeal">@foreach (var option in Enum.GetValues<Meal>()) { <option value="@option">@option</option> }
+</select>
+</label>
+<button class="button secondary" @onclick="SaveEdit" disabled="@Busy">Save</button>
+<button class="text-button danger" @onclick="() => Delete(entry.Id)" disabled="@Busy">Delete entry</button>
+<button class="text-button" @onclick="() => _editing = null">Cancel</button>
+</div> }
+        }
+        </section>
+    }
+    </section>
+    <section class="panel day-tools">
+<div>
+<h3>Finished logging?</h3>
+<p class="muted small">Only completed days are used for nutrition averages and coaching. Editing food reopens the day.</p>
+</div>
+<select aria-label="Day completion status" value="@_day.Status" @onchange="StatusChanged" disabled="@Busy">
+<option value="@DiaryStatus.Incomplete">Still logging</option>
+<option value="@DiaryStatus.Complete">Day complete</option>
+<option value="@DiaryStatus.ConfirmedZero">Confirm zero intake</option>
+</select>
+</section>
+    <details class="panel copy-tools">
+<summary>Copy this day or meal</summary>
+<div class="form-grid">
+<label>Destination date<input type="date" @bind="_copyTo" max="@_today.ToString("yyyy-MM-dd")" />
+</label>
+<label>What to copy<select @bind="_copyMeal">
+<option value="">Whole day</option>@foreach (var meal in Enum.GetValues<Meal>()) { <option value="@meal">@meal</option> }
+</select>
+</label>
+</div>
+<p class="muted small">Copies are added alongside existing entries on the destination day.</p>
+<button class="button secondary" @onclick="Copy" disabled="@Busy">Copy entries</button>@if (Notice is not null) { <p role="status">@Notice</p> }
+</details>
+}
+@if (_showFood) { <FoodComposer InitialMeal="_addMeal" OnAdd="AddFood" OnClose="() => _showFood = false" /> }

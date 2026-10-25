@@ -1,0 +1,111 @@
+@page "/progress"
+@attribute [Authorize]
+@inherits TrackerPage
+<PageTitle>Progress · MyCal</PageTitle>
+<header class="page-heading">
+<div>
+<p class="eyebrow">LOOK AT THE TREND</p>
+<h1>Progress has a rhythm.</h1>
+<p class="muted">A clearer picture beyond day-to-day changes.</p>
+</div>
+</header>
+@if (Error is not null) { <div class="notice error" role="alert">@Error</div> }@if (Notice is not null) { <div class="notice" role="status">@Notice</div> }
+@if (_data is null) { <div class="panel skeleton">Loading your progress…</div> }
+else {
+<section class="panel weight-panel">
+<div class="section-heading">
+<div>
+<h2>Weight trend</h2>
+<p class="muted small">Last 90 days · kg</p>
+</div>
+<div class="weight-reading">
+<strong>@(_data.Weights.LastOrDefault()?.Kilograms.ToString("0.#") ?? "—")</strong>
+<span>kg</span>
+</div>
+</div>
+@if (_data.Weights.Count == 0) { <div class="empty-mini">
+<p>Your trend starts with one weigh-in.</p>
+</div> }
+else { <div class="weight-chart">
+<div class="chart-labels">
+<span>@_data.Weights.Max(x => x.Kilograms).ToString("0.#") kg</span>
+<span>@_data.Weights.Min(x => x.Kilograms).ToString("0.#") kg</span>
+</div>
+<svg viewBox="0 0 700 200" role="img" aria-label="Weight measurements and seven-day moving average">
+<path d="M10 45H690M10 100H690M10 155H690" class="chart-grid" />
+<polyline points="@Points(_data.Weights)" class="raw-line" />@foreach (var point in _data.Weights) { <circle cx="@X(point.Date)" cy="@Y(point.Kilograms)" r="3" class="raw-point">
+<title>@point.Date.ToString("d MMM"): @point.Kilograms.ToString("0.#") kg</title>
+</circle> }@foreach (var segment in TrendSegments()) { <polyline points="@Points(segment)" class="trend-line" /> }
+</svg>
+</div>
+<div class="chart-bottom">
+<span>@_data.Weights.First().Date.ToString("d MMM")</span>
+<span>● Measurements <strong>━ 7-day average</strong>
+</span>
+<span>@_data.Weights.Last().Date.ToString("d MMM")</span>
+</div> }
+<p class="muted small">The average requires at least three weigh-ins in a seven-day window. Gaps remain gaps. Normal water-weight changes can move individual readings.</p>
+<form class="weight-form" @onsubmit="SaveWeight" @onsubmit:preventDefault="true">
+<label>Date<input type="date" @bind="_weightDate" max="@_today.ToString("yyyy-MM-dd")" />
+</label>
+<label>Weight (kg)<input type="number" min="30" max="350" step="0.1" @bind="_kg" required />
+</label>
+<button class="button primary" disabled="@Busy">Save weigh-in</button>
+</form>
+</section>
+<div class="dashboard-top">
+<section class="panel settings-panel">
+<p class="eyebrow">YOUR LAST 28 FINISHED DAYS</p>
+<h2>Consistency, in numbers.</h2>
+<p class="muted small">@_data.CompleteDays days marked complete. Incomplete days are excluded; unknown macros remain unknown.</p>
+<div class="average-grid">
+<div>
+<strong>@Average(_data.AverageCalories)</strong>
+<small>kcal / day</small>
+</div>
+<div>
+<strong>@Average(_data.AverageProtein)</strong>
+<small>protein · g</small>
+</div>
+<div>
+<strong>@Average(_data.AverageCarbohydrates)</strong>
+<small>carbohydrate · g</small>
+</div>
+<div>
+<strong>@Average(_data.AverageFat)</strong>
+<small>fat · g</small>
+</div>
+</div>
+</section>
+<section class="panel coaching-panel">
+<p class="eyebrow">A THOUGHTFUL NEXT STEP</p>
+<h2>Your weekly check-in.</h2>
+<p class="muted">A small adjustment, only when your records support it.</p>
+<button class="button secondary" @onclick="Review" disabled="@Busy">Review my last 28 days →</button>
+@if (_review is { } review) { <div class="review-result" role="status">
+<p>@review.Reason</p>@if (review.WeeklyLossPercent is { } loss) { <p class="small muted">Recorded trend: @loss.ToString("0.00")% loss per week.</p> }@if (review.SuggestedCalories is { } calories && !review.Accepted) { <strong>@Number(review.CurrentCalories) → @Number(calories) kcal</strong>
+<button class="button primary wide" @onclick="AcceptReview" disabled="@Busy">Accept for tomorrow</button> }else if (review.Accepted) { <span class="tag">Accepted · starts tomorrow</span> }
+</div> }
+<details class="explanation">
+<summary>How this beta makes suggestions</summary>
+<p>Requires 28 complete days on an unchanged calorie target, at least three weigh-ins each week, and average intake within 10% of target. We compare two fortnightly weight averages. The default loss range is 0.25–0.75% weekly; a suggestion changes calories by 100.</p>
+<p>Cuts are withheld below 1,500 kcal or beyond a 25% estimated deficit. These are conservative beta limits, not universal medical thresholds. This is a transparent product rule, not a clinically validated model or a measurement of true energy expenditure. You approve every change.</p>
+<a href="https://www.niddk.nih.gov/research-funding/at-niddk/labs-branches/laboratory-biological-modeling/integrative-physiology-section/research/body-weight-planner" target="_blank" rel="noopener">Why weight change is complex ↗</a>
+</details>
+</section>
+</div>
+<details class="panel copy-tools">
+<summary>Edit past weigh-ins</summary>@foreach (var point in _data.Weights.Reverse()) { <div class="weight-history">
+<span>@point.Date.ToString("d MMM yyyy")</span>
+<strong>@point.Kilograms.ToString("0.#") kg</strong>
+<button class="text-button" @onclick="() => EditWeight(point)">Edit</button>
+<button class="text-button danger" @onclick="() => DeleteWeight(point.Date)">Delete</button>
+</div> }
+</details>
+@if (_reviews.Count > 0) { <details class="panel copy-tools">
+<summary>Previous check-ins</summary>@foreach (var r in _reviews) { <div class="explanation">
+<p>@r.Reason</p>
+<small class="muted">@Number(r.CurrentCalories) kcal · @(r.Accepted ? "Accepted" : r.SuggestedCalories is null ? "Held" : "Suggestion")</small>
+</div> }
+</details> }
+}

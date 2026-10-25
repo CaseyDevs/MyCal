@@ -1,0 +1,133 @@
+@page "/settings"
+@page "/profile"
+@page "/profiles"
+@page "/profile-setup"
+@page "/profile/setup"
+@attribute [Authorize]
+@inherits TrackerPage
+@inject IJSRuntime JS
+<PageTitle>Settings · MyCal</PageTitle>
+<header class="page-heading">
+<div>
+<p class="eyebrow">MAKE IT YOURS</p>
+<h1>@(UserProfile is null ? "Let's start with you." : "Your plan. Your pace.")</h1>
+<p class="muted">A few details to build your starting picture.</p>
+</div>
+</header>
+@if (Error is not null) { <div class="notice error" role="alert">@Error</div> }
+@if (Notice is not null) { <div class="notice" role="status">@Notice</div> }
+<div class="settings-grid">
+<section class="panel settings-panel">
+<div class="section-heading">
+<h2>Your profile</h2>
+<span class="tag">METRIC</span>
+</div>
+<EditForm Model="_input" OnValidSubmit="SaveProfile">
+<DataAnnotationsValidator />
+<ValidationSummary class="notice error" />
+<div class="form-grid">
+<label class="span-2">Name<InputText @bind-Value="_input.Name" autocomplete="given-name" />
+</label>
+<label>Age<InputNumber @bind-Value="_input.Age" />
+</label>
+<label>Height (cm)<InputNumber @bind-Value="_input.Height" step="any" />
+</label>
+<label>Profile weight (kg)<InputNumber @bind-Value="_input.Weight" step="any" />
+</label>
+<label>Goal weight (kg)<InputNumber @bind-Value="_input.GoalWeight" step="any" />
+</label>
+<label class="span-2">Equation coefficient<InputSelect @bind-Value="_input.Coefficient">
+<option value="@Gender.Male">Male (+5)</option>
+<option value="@Gender.Female">Female (−161)</option>
+</InputSelect>
+<small class="muted">Used by the resting-energy equation; you can edit the resulting targets.</small>
+</label>
+<label class="span-2">Usual activity<InputSelect @bind-Value="_input.Activity">
+<option value="@ActivityLevel.Sedentary">Sedentary · mostly sitting</option>
+<option value="@ActivityLevel.LightlyActive">Light · some walking or exercise</option>
+<option value="@ActivityLevel.ModeratelyActive">Moderate · regular exercise</option>
+<option value="@ActivityLevel.VeryActive">Very active · high daily activity</option>
+<option value="@ActivityLevel.ExtraActive">Extra active · very demanding activity</option>
+</InputSelect>
+</label>
+<label class="span-2">Time zone<InputText @bind-Value="_input.TimeZoneId" list="zones" />
+<datalist id="zones">
+<option>Europe/London</option>
+<option>Europe/Paris</option>
+<option>America/New_York</option>
+<option>America/Los_Angeles</option>
+<option>Asia/Kolkata</option>
+<option>Australia/Sydney</option>
+</datalist>
+<small class="muted">Use an IANA name. Changing it affects today, never the dates of old logs.</small>
+</label>
+</div>
+<button class="button primary" disabled="@Busy">@(UserProfile is null ? "Create my starting plan →" : "Save profile")</button>
+</EditForm>
+<p class="muted small">Profile changes don't overwrite existing targets. Use the target form to schedule a new plan.</p>
+</section>
+<div>
+<section class="panel settings-panel">
+<h2>Daily targets</h2>
+@if (UserProfile is null) { <p class="muted">Save your profile to calculate your first targets.</p> }
+else { <p class="muted small">@(_revisions.FirstOrDefault() is { } latest ? $"Latest plan starts {latest.EffectiveFrom:d MMM yyyy}." : "Save your first plan.") Changes start tomorrow and preserve previous days.</p>
+<EditForm Model="_target" OnValidSubmit="SaveTargets">
+<DataAnnotationsValidator />
+<ValidationSummary class="notice error" />
+<div class="form-grid">
+<label class="span-2">Goal<InputSelect @bind-Value="_target.Goal">
+<option value="@GoalType.LoseWeight">Lose weight</option>
+<option value="@GoalType.MaintainWeight">Maintain weight</option>
+<option value="@GoalType.GainWeight">Gain weight</option>
+</InputSelect>
+</label>
+<label class="span-2">Calories (kcal)<InputNumber @bind-Value="_target.Calories" step="1" />
+</label>
+<label>Protein (g)<InputNumber @bind-Value="_target.Protein" step="any" />
+</label>
+<label>Fat (g)<InputNumber @bind-Value="_target.Fat" step="any" />
+</label>
+<label class="span-2">Carbohydrate (g)<InputNumber @bind-Value="_target.Carbohydrates" step="any" />
+</label>
+</div>
+<div class="button-row">
+<button type="button" class="text-button" @onclick="RecalculateCarbs">Fill remaining calories with carbs</button>
+<button type="button" class="text-button" @onclick="StartingTargets">Use starting estimate</button>
+</div>
+<button class="button primary" disabled="@Busy">Schedule targets for tomorrow</button>
+</EditForm>
+<details class="explanation">
+<summary>How the starting estimate works</summary>
+<p>Mifflin–St Jeor estimates resting energy from weight, height, age, and the selected coefficient. An activity multiplier estimates maintenance. Fat loss starts 15% below maintenance (at least 1,500 kcal in this beta); maintenance uses that estimate; gain starts 5% above it.</p>
+<p>Protein starts at 1.6 g/kg, fat at 30% of calories, and carbohydrate uses the remaining calories. These are editable starting choices, not a measurement of your metabolism. Exercise is already part of the activity estimate; calories aren't automatically added back.</p>
+<p>
+<a href="https://pubmed.ncbi.nlm.nih.gov/2305711/" target="_blank" rel="noopener">Equation research ↗</a> · <a href="https://doi.org/10.1186/s12970-017-0177-8" target="_blank" rel="noopener">Protein research ↗</a>
+</p>
+</details>
+<details class="explanation">
+<summary>Target history</summary>@foreach (var revision in _revisions) { <div class="history-mini">
+<span>@revision.EffectiveFrom.ToString("d MMM yyyy")</span>
+<strong>@Number(revision.Calories) kcal</strong>
+<small>P @Number(revision.Protein) · C @Number(revision.Carbohydrates) · F @Number(revision.Fat)</small>
+</div> }
+</details>
+}
+</section>
+<section class="panel settings-panel">
+<h2>A comfortable view.</h2>
+<label>Appearance<select value="@_theme" @onchange="SetTheme">
+<option value="system">Use system setting</option>
+<option value="light">Light</option>
+<option value="dark">Dark</option>
+</select>
+</label>
+<p class="muted small">Saved on this device. Both themes show the same data.</p>@if (_admin) { <p>
+<a class="button secondary" href="/admin">Manage beta invitations →</a>
+</p> }
+<form method="post" action="/account/logout">
+<AntiforgeryToken />
+<button class="text-button" type="submit">Sign out</button>
+</form>
+</section>
+</div>
+</div>

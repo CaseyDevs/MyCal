@@ -1,0 +1,20 @@
+name: mycal-local
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: mycal
+      POSTGRES_PASSWORD: ${MYCAL_LOCAL_DB_PASSWORD:-local-development-only}
+      POSTGRES_DB: mycal
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mycal -d mycal"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+volumes:
+  postgres-data:
