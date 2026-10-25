@@ -32,7 +32,9 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<TrackerService>();
 builder.Services.AddScoped<BetaAccounts>();
 builder.Services.AddMemoryCache();
-builder.Services.AddHttpClient("nutrition", c => c.Timeout = TimeSpan.FromSeconds(8)).RemoveAllLoggers();
+// A provider failure is shown once; inherited retries would spend uncounted API quota.
+builder.Services.AddHttpClient("nutrition", c => c.Timeout = TimeSpan.FromSeconds(8))
+    .RemoveAllResilienceHandlers().RemoveAllLoggers();
 builder.Services.AddSingleton<IFoodSearch, FoodCatalog>();
 builder.Services.AddProblemDetails();
 builder.Services.AddAntiforgery(o => o.HeaderName = "X-CSRF-TOKEN");
