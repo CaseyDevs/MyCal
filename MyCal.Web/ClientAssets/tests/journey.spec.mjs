@@ -202,6 +202,93 @@ test("future targets preserve today and both themes remain usable", async ({
     await context.close();
   }
 });
+test("diet presets reload correctly and manual edits retain today's targets", async ({
+  browser,
+}, testInfo) => {
+  const { context, page, errors } = await member(browser, testInfo);
+  try {
+    const original = await page.locator(".energy-ring strong").innerText();
+    await page.getByRole("link", { name: "Settings", exact: true }).click();
+    await page
+      .getByRole("combobox", { name: "Training focus", exact: true })
+      .selectOption("ResistanceTraining");
+    await page
+      .getByRole("combobox", { name: "Protein preference", exact: true })
+      .selectOption("Higher");
+    await page
+      .getByRole("combobox", { name: "Diet preference", exact: true })
+      .selectOption("LowerFat");
+    await page.getByLabel("Calories (kcal)", { exact: true }).fill("2000");
+    await page
+      .getByRole("button", { name: "Apply diet preferences", exact: true })
+      .click();
+    await expect(page.getByLabel("Protein (g)", { exact: true })).toHaveValue(
+      /^165(?:\.0+)?$/,
+    );
+    await expect(
+      page.getByLabel("Carbohydrate (g)", { exact: true }),
+    ).toHaveValue(/^235(?:\.0+)?$/);
+    await expect(page.getByLabel("Fat (g)", { exact: true })).toHaveValue(
+      "44.4",
+    );
+    await page
+      .getByRole("button", { name: "Schedule targets for tomorrow" })
+      .click();
+    await expect(
+      page.getByText(/Your new targets are scheduled for tomorrow/),
+    ).toBeVisible();
+    await page.reload();
+    await expect(
+      page.getByRole("combobox", { name: "Training focus", exact: true }),
+    ).toHaveValue("ResistanceTraining");
+    await expect(
+      page.getByRole("combobox", { name: "Protein preference", exact: true }),
+    ).toHaveValue("Higher");
+    await expect(
+      page.getByRole("combobox", { name: "Diet preference", exact: true }),
+    ).toHaveValue("LowerFat");
+    await screenshot(page, testInfo, "diet-light");
+    await page
+      .getByRole("combobox", { name: "Appearance", exact: true })
+      .selectOption("dark");
+    await screenshot(page, testInfo, "diet-dark");
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    await page.getByRole("link", { name: "Today", exact: true }).click();
+    await expect(page.locator(".energy-ring strong")).toHaveText(original);
+    await page.getByRole("link", { name: "Settings", exact: true }).click();
+    await page.getByLabel("Fat (g)", { exact: true }).fill("50");
+    await page
+      .getByRole("button", { name: "Fill remaining calories with carbs" })
+      .click();
+    await expect(
+      page.getByRole("combobox", { name: "Diet preference", exact: true }),
+    ).toHaveValue("Custom");
+    await expect(
+      page.getByLabel("Carbohydrate (g)", { exact: true }),
+    ).toHaveValue("222.5");
+    await page
+      .getByRole("button", { name: "Schedule targets for tomorrow" })
+      .click();
+    await expect(
+      page.getByText(/Your new targets are scheduled for tomorrow/),
+    ).toBeVisible();
+    await page.reload();
+    await expect(
+      page.getByRole("combobox", { name: "Diet preference", exact: true }),
+    ).toHaveValue("Custom");
+    await expect(page.getByLabel("Protein (g)", { exact: true })).toHaveValue(
+      /^165(?:\.0+)?$/,
+    );
+    expect(errors).toEqual([]);
+  } finally {
+    await context.close();
+  }
+});
+
 test("denied camera permission and invalid barcodes offer a working fallback", async ({
   browser,
 }, testInfo) => {
