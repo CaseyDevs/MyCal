@@ -1,0 +1,39 @@
+@page "/account/login"
+@model MyCal.Web.Pages.Account.LoginModel
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sign in · MyCal</title>
+<link rel="stylesheet" href="/app.css">
+<script src="/js/theme.js">
+</script>
+</head>
+<body>
+<main class="auth-shell">
+<a class="brand" href="/">mycal<span>●</span>
+</a>
+<section class="panel auth-card">
+<p class="eyebrow">YOUR DAILY PICTURE</p>
+<h1>Welcome back.</h1>
+<p class="muted">A little more clarity, every day.</p>
+<form method="post">
+<div asp-validation-summary="All" class="notice error" role="alert">
+</div>
+<input type="hidden" asp-for="ReturnUrl">
+<label asp-for="Email">Email address</label>
+<input asp-for="Email" type="email" autocomplete="username" required>
+<label asp-for="Password">Password</label>
+<input asp-for="Password" type="password" autocomplete="current-password" required>
+<label class="check">
+<input asp-for="RememberMe"> Keep me signed in</label>
+<button class="button primary wide" type="submit">Sign in <span>↗</span>
+</button>
+</form>
+<p class="muted small">Private beta. Ask your administrator for an invitation or account recovery link.</p>
+</section>
+<p class="auth-foot">Small habits. A clearer picture.</p>
+</main>
+</body>
+</html>
