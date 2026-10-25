@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
@@ -16,56 +17,109 @@ public sealed class FoodCatalog(IHttpClientFactory clients, IMemoryCache cache, 
     private readonly object _gate = new();
     private readonly Dictionary<string, Queue<DateTimeOffset>> _requests = [];
 
-    public async Task<FoodSearchPage> SearchAsync(string query, CancellationToken ct = default)
+    // Bounded striped locks coalesce identical searches without retaining one lock per query.
+    private readonly SemaphoreSlim[] _searchLocks = Enumerable.Range(0, 64).Select(_ => new SemaphoreSlim(1)).ToArray();
+
+    public async Task<FoodSearchPage> SearchAsync(string query, CancellationToken ct = default,
+        FoodSearchMarket market = FoodSearchMarket.UnitedKingdom)
     {
-        query = query.Trim();
+        FoodSearchPage page = new([]);
+        await foreach (var update in SearchProgressivelyAsync(query, ct, market))
+            page = update;
+        return page;
+    }
+
+    public async IAsyncEnumerable<FoodSearchPage> SearchProgressivelyAsync(string query,
+        [EnumeratorCancellation] CancellationToken ct = default, FoodSearchMarket market = FoodSearchMarket.UnitedKingdom)
+    {
+        query = string.Join(" ", query.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
         if (query.Length is < 2 or > 100)
             throw new ValidationException("Search using 2–100 characters.");
-        var key = "search:" + query.ToLowerInvariant();
-        if (cache.TryGetValue<FoodSearchPage>(key, out var cached))
-            return cached!;
+        if (!Enum.IsDefined(market))
+            throw new ValidationException("Choose UK or worldwide packaged foods.");
+        using var lifetime = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        var pending = new List<Task<FoodSearchPage>>
+        {
+            SearchProvider("usda", query, market, lifetime.Token),
+            SearchProvider("off-search", query, market, lifetime.Token)
+        };
         var foods = new List<FoodItem>();
         var notices = new List<string>();
-        var apiKey = configuration["UsdaFoodData:ApiKey"];
-        if (!string.IsNullOrWhiteSpace(apiKey))
-        {
-            try
-            {
-                if (Permit("usda", 25))
-                {
-                    using var json = await GetJson("https://api.nal.usda.gov/fdc/v1/foods/search?dataType=Foundation,SR%20Legacy&pageSize=12&query="
-                        + Uri.EscapeDataString(query), ct, apiKey);
-                    if (json.RootElement.TryGetProperty("foods", out var items))
-                        foreach (var item in items.EnumerateArray())
-                        if (ParseUsda(item) is { } f)
-                            foods.Add(f);
-                }
-                else
-                    notices.Add("Generic search is busy. Try again in a minute.");
-            }
-            catch (Exception e) when (ProviderFailure(e, ct)) { notices.Add("Generic search is temporarily unavailable. Your custom foods and saved foods still work."); }
-        }
-        else
-            notices.Add("Add a USDA API key to enable generic-food search. Packaged and custom foods are available.");
         try
         {
-            if (Permit("off-search", 10))
+            while (pending.Count > 0)
             {
-                using var json = await GetJson("https://world.openfoodfacts.org/cgi/search.pl?search_simple=1&action=process&json=1&page_size=12&lc=en&search_terms="
-                    + Uri.EscapeDataString(query) + "&fields=code,product_name,brands,nutriments,nutrition_data_per,serving_quantity_unit", ct);
-                if (json.RootElement.TryGetProperty("products", out var products))
-                    foreach (var item in products.EnumerateArray())
-                    if (ParseOff(item) is { } f)
-                        foods.Add(f);
+                var next = await Task.WhenAny(pending);
+                pending.Remove(next);
+                var result = await next;
+                ct.ThrowIfCancellationRequested();
+                foods.AddRange(result.Foods);
+                if (result.Notice is not null)
+                    notices.Add(result.Notice);
+                yield return new(FoodSearchRanking.Rank(query, foods),
+                    notices.Count == 0 ? null : string.Join(" ", notices), pending.Count == 0);
             }
-            else
-                notices.Add("Packaged-food search has reached its minute limit. Use recents, favourites, or a custom food.");
         }
-        catch (Exception e) when (ProviderFailure(e, ct)) { notices.Add("Packaged-food search is temporarily unavailable. You can enter the package values manually."); }
-        var page = new FoodSearchPage(foods, notices.Count == 0 ? null : string.Join(" ", notices));
-        // Never cache a temporary provider outage for a full hour.
-        cache.Set(key, page, notices.Count == 0 ? TimeSpan.FromHours(1) : TimeSpan.FromSeconds(20));
-        return page;
+        finally
+        {
+            // Closing the dialog or starting another query stops both provider requests.
+            await lifetime.CancelAsync();
+            try
+            { await Task.WhenAll(pending); }
+            catch (OperationCanceledException) when (lifetime.IsCancellationRequested) { }
+        }
+    }
+
+    private async Task<FoodSearchPage> SearchProvider(string provider, string query, FoodSearchMarket market, CancellationToken ct)
+    {
+        var key = $"search:v2:{provider}:{(provider == "usda" ? "generic" : market.ToString())}:{query.ToLowerInvariant()}";
+        if (cache.TryGetValue<FoodSearchPage>(key, out var cached))
+            return cached!;
+        var gate = _searchLocks[((uint)StringComparer.Ordinal.GetHashCode(key) % 32) * 2 + (provider == "usda" ? 0 : 1)];
+        await gate.WaitAsync(ct);
+        try
+        {
+            if (cache.TryGetValue(key, out cached))
+                return cached!;
+            var result = await FetchProvider(provider, query, market, ct);
+            cache.Set(key, result, result.Notice is null ? TimeSpan.FromHours(1) : TimeSpan.FromSeconds(20));
+            return result;
+        }
+        finally { gate.Release(); }
+    }
+
+    private async Task<FoodSearchPage> FetchProvider(string provider, string query, FoodSearchMarket market, CancellationToken ct)
+    {
+        var generic = provider == "usda";
+        var apiKey = configuration["UsdaFoodData:ApiKey"];
+        if (generic && string.IsNullOrWhiteSpace(apiKey))
+            return new([], "Add a USDA API key to enable generic-food search. Packaged and custom foods are available.");
+        if (!Permit(provider, generic ? 25 : 10) || (generic && !Permit("usda-hour", 900, TimeSpan.FromHours(1))))
+            return new([], generic ? "Generic search is busy. Try again shortly." :
+                "Packaged-food search has reached its minute limit. Use recents, favourites, or a custom food.");
+        try
+        {
+            var url = generic
+                ? "https://api.nal.usda.gov/fdc/v1/foods/search?dataType=Foundation,SR%20Legacy,Survey%20(FNDDS)&pageSize=40&query="
+                    + Uri.EscapeDataString(query)
+                : "https://world.openfoodfacts.org/cgi/search.pl?search_simple=1&action=process&json=1&page_size=30&lc=en&sort_by=unique_scans_n&search_terms="
+                    + Uri.EscapeDataString(query)
+                    + (market == FoodSearchMarket.UnitedKingdom ? "&tagtype_0=countries&tag_contains_0=contains&tag_0=united-kingdom" : "")
+                    + "&fields=code,product_name,product_name_en,brands,nutriments,nutrition_data_per,serving_quantity_unit";
+            using var json = await GetJson(url, ct, generic ? apiKey : null);
+            if (!json.RootElement.TryGetProperty(generic ? "foods" : "products", out var items) || items.ValueKind != JsonValueKind.Array)
+                throw new JsonException("Missing search results.");
+            var foods = new List<FoodItem>();
+            foreach (var item in items.EnumerateArray())
+                if ((generic ? ParseUsda(item) : ParseOff(item)) is { } food)
+                    foods.Add(food);
+            return new(foods);
+        }
+        catch (Exception e) when (ProviderFailure(e, ct))
+        {
+            return new([], generic ? "Generic search is temporarily unavailable. Your saved and custom foods still work." :
+                "Packaged-food search is temporarily unavailable. Try again or enter the package values manually.");
+        }
     }
 
     public async Task<FoodItem?> BarcodeAsync(string barcode, CancellationToken ct = default)
@@ -142,14 +196,16 @@ public sealed class FoodCatalog(IHttpClientFactory clients, IMemoryCache cache, 
         if (!food.TryGetProperty("nutriments", out var n))
             return null;
         var energy = Number(n, "energy-kcal_100g") ?? (Number(n, "energy-kj_100g") ?? Number(n, "energy_100g")) / 4.184m;
-        if (energy is null || string.IsNullOrWhiteSpace(Text(food, "product_name")))
+        var name = Text(food, "product_name_en");
+        if (string.IsNullOrWhiteSpace(name)) name = Text(food, "product_name");
+        if (energy is null || string.IsNullOrWhiteSpace(name))
             return null;
         var carbs = Number(n, "carbohydrates_100g");
         if (carbs is null && Number(n, "carbohydrates-total_100g") is { } total && Number(n, "fiber_100g") is { } fibre && total >= fibre)
             carbs = total - fibre;
         // OFF's *_100g fields also represent per-100ml labels. Require an explicit
         // package check instead of guessing density or inferring units from the food name.
-        var result = new FoodItem(Text(food, "product_name")!, Text(food, "brands"), "Open Food Facts", Text(food, "code"),
+        var result = new FoodItem(name, Text(food, "brands"), "Open Food Facts", Text(food, "code"),
             Text(food, "code"), Text(food, "serving_quantity_unit") == "ml" ? NutritionUnit.Millilitres : NutritionUnit.Grams,
             100, energy.Value, Number(n, "proteins_100g"), carbs, Number(n, "fat_100g"), RequiresBasisConfirmation: true);
         return ValidResult(result);
@@ -184,14 +240,14 @@ public sealed class FoodCatalog(IHttpClientFactory clients, IMemoryCache cache, 
         await using var stream = await response.Content.ReadAsStreamAsync(ct);
         return await JsonDocument.ParseAsync(stream, cancellationToken: ct);
     }
-    private bool Permit(string name, int limit)
+    private bool Permit(string name, int limit, TimeSpan? window = null)
     {
         lock (_gate)
         {
             if (!_requests.TryGetValue(name, out var queue))
                 _requests[name] = queue = new();
             var now = clock.GetUtcNow();
-            while (queue.TryPeek(out var at) && now - at >= TimeSpan.FromMinutes(1))
+            while (queue.TryPeek(out var at) && now - at >= (window ?? TimeSpan.FromMinutes(1)))
                 queue.Dequeue();
             if (queue.Count >= limit)
                 return false;

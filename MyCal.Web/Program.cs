@@ -32,7 +32,7 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<TrackerService>();
 builder.Services.AddScoped<BetaAccounts>();
 builder.Services.AddMemoryCache();
-builder.Services.AddHttpClient("nutrition", c => c.Timeout = TimeSpan.FromSeconds(12)).RemoveAllLoggers();
+builder.Services.AddHttpClient("nutrition", c => c.Timeout = TimeSpan.FromSeconds(8)).RemoveAllLoggers();
 builder.Services.AddSingleton<IFoodSearch, FoodCatalog>();
 builder.Services.AddProblemDetails();
 builder.Services.AddAntiforgery(o => o.HeaderName = "X-CSRF-TOKEN");
