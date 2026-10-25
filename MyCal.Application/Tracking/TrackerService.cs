@@ -244,6 +244,9 @@ public sealed partial class TrackerService(IDbContextFactory<AppDbContext> facto
                 revision.Carbohydrates = input.Carbohydrates;
                 revision.Fat = input.Fat;
                 revision.Goal = input.Goal;
+                revision.Training = input.Training;
+                revision.ProteinPreference = input.ProteinPreference;
+                revision.Diet = input.Diet;
                 revision.MaintenanceEstimate = (decimal)u.MaintenanceCalories;
             }
             await db.SaveChangesAsync(ct);
@@ -366,7 +369,7 @@ public sealed partial class TrackerService(IDbContextFactory<AppDbContext> facto
     private static Profile MapProfile(User u) => new(u.Id, u.Name, u.Email, (decimal)u.HeightInCm,
         (decimal)u.WeightInKg, (decimal)u.WeightGoal, u.Age, u.Gender, u.ActivityLevel, u.TimeZoneId);
     private static Target MapTarget(TargetRevision t) => new(t.Id, t.EffectiveFrom, t.Calories, t.Protein,
-        t.Carbohydrates, t.Fat, t.MaintenanceEstimate, t.Goal);
+        t.Carbohydrates, t.Fat, t.MaintenanceEstimate, t.Goal, t.Training, t.ProteinPreference, t.Diet);
     private static TargetRevision NewTarget(int userId, DateOnly date, decimal maintenance, TargetInput t) => new()
     {
         UserId = userId,
@@ -376,6 +379,9 @@ public sealed partial class TrackerService(IDbContextFactory<AppDbContext> facto
         Carbohydrates = t.Carbohydrates,
         Fat = t.Fat,
         Goal = t.Goal,
+        Training = t.Training,
+        ProteinPreference = t.ProteinPreference,
+        Diet = t.Diet,
         MaintenanceEstimate = maintenance
     };
     private static Task<TargetRevision?> TargetAt(AppDbContext db, int userId, DateOnly date, CancellationToken ct)

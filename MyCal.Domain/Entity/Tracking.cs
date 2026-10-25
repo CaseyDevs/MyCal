@@ -15,6 +15,9 @@ public enum DiaryStatus
 {
     Incomplete, Complete, ConfirmedZero
 }
+public enum TrainingType { GeneralActivity, ResistanceTraining }
+public enum ProteinPreference { Standard, Higher }
+public enum DietPreference { Custom, Balanced, LowerFat, LowerCarb }
 
 public sealed class TargetRevision : BaseEntity
 {
@@ -50,6 +53,9 @@ public sealed class TargetRevision : BaseEntity
     {
         get; set;
     }
+    public TrainingType Training { get; set; }
+    public ProteinPreference ProteinPreference { get; set; }
+    public DietPreference Diet { get; set; }
 }
 
 public sealed class WeightEntry : BaseEntity

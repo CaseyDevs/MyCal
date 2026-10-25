@@ -32,13 +32,39 @@ public partial class Settings
                 Protein = decimal.Round(t.Protein, 1),
                 Carbohydrates = decimal.Round(t.Carbohydrates, 1),
                 Fat = decimal.Round(t.Fat, 1),
-                Goal = t.Goal
+                Goal = t.Goal,
+                Training = t.Training,
+                ProteinPreference = t.ProteinPreference,
+                Diet = t.Diet
             };
     }
     private Task SaveProfile() => Run(async () => { var account = await Account.GetAsync(); UserProfile = await Tracker.SaveProfileAsync(IdentityId, account.Email, _input); await LoadTargets(); Notice = _revisions.Count == 0 ? "Profile saved. Set manual targets below to complete your plan." : "Profile saved. Your diary is ready."; });
     private Task SaveTargets() => Run(async () => { await Tracker.SaveTargetAsync(IdentityId, _target); await LoadTargets(); Notice = "Your new targets are scheduled for tomorrow. Earlier days keep their original targets."; });
-    private Task RecalculateCarbs() => Run(() => { _target.Carbohydrates = decimal.Round(NutritionMath.Carbohydrates(_target.Calories, _target.Protein, _target.Fat), 1); return Task.CompletedTask; });
-    private Task StartingTargets() => Run(() => { var p = UserProfile!; var maintenance = NutritionMath.Maintenance(p.Weight, p.Height, p.Age, p.Coefficient, p.Activity); _target = NutritionMath.StartingTarget(maintenance, p.Weight, _target.Goal); _target.Protein = decimal.Round(_target.Protein, 1); _target.Fat = decimal.Round(_target.Fat, 1); _target.Carbohydrates = decimal.Round(_target.Carbohydrates, 1); Notice = "Starting estimate filled in. Save to schedule it for tomorrow."; return Task.CompletedTask; });
+    private Task RecalculateCarbs() => Run(() => { MarkCustom(); _target.Carbohydrates = decimal.Round(NutritionMath.Carbohydrates(_target.Calories, _target.Protein, _target.Fat), 1); return Task.CompletedTask; });
+    private Task StartingTargets() => Run(() =>
+    {
+        var p = UserProfile!;
+        var maintenance = NutritionMath.Maintenance(p.Weight, p.Height, p.Age, p.Coefficient, p.Activity);
+        SetCalculatedTarget(NutritionMath.StartingTarget(maintenance, p.Weight, _target.Goal,
+            _target.Training, _target.ProteinPreference, _target.Diet == DietPreference.Custom ? DietPreference.Balanced : _target.Diet));
+        Notice = "Starting estimate filled in. Save to schedule it for tomorrow.";
+        return Task.CompletedTask;
+    });
+    private Task ApplyPreferences() => Run(() =>
+    {
+        SetCalculatedTarget(NutritionMath.AllocateMacros(_target.Calories, UserProfile!.Weight, _target.Goal,
+            _target.Training, _target.ProteinPreference, _target.Diet));
+        Notice = "Diet preferences applied to your current calorie target. Save to schedule them for tomorrow.";
+        return Task.CompletedTask;
+    });
+    private void SetCalculatedTarget(TargetInput target)
+    {
+        target.Protein = decimal.Round(target.Protein, 1);
+        target.Fat = decimal.Round(target.Fat, 1);
+        target.Carbohydrates = decimal.Round(target.Carbohydrates, 1);
+        _target = target;
+    }
+    private void MarkCustom() => _target.Diet = DietPreference.Custom;
     private async Task SetTheme(ChangeEventArgs e)
     {
         _theme = e.Value?.ToString() ?? "system";

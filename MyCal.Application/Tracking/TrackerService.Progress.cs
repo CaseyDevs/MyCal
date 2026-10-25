@@ -81,15 +81,7 @@ public sealed partial class TrackerService
                 throw new ValidationException("Your data or target has changed. Run a fresh review before accepting.");
             var target = await db.Targets.SingleAsync(x => x.Id == review.TargetRevisionId && x.UserId == u.Id, ct);
             var calories = review.SuggestedCalories.Value;
-            var input = new TargetInput
-            {
-                Calories = calories,
-                Protein = target.Protein,
-                Fat = calories * .3m / 9,
-                Goal = target.Goal
-            };
-            input.Carbohydrates = NutritionMath.Carbohydrates(input.Calories, input.Protein, input.Fat);
-            NutritionMath.ValidateTarget(input);
+            var input = NutritionMath.AdjustCalories(MapTarget(target), calories);
             db.Targets.Add(NewTarget(u.Id, review.Date.AddDays(1), target.MaintenanceEstimate, input));
             review.AcceptedAt = clock.GetUtcNow().UtcDateTime;
             await db.SaveChangesAsync(ct);
