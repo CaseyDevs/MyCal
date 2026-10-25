@@ -19,7 +19,7 @@ public class FoodLogEntryConfiguration : IEntityTypeConfiguration<FoodLogEntry>
         builder.HasOne(entry => entry.Food)
             .WithMany()
             .HasForeignKey(entry => entry.FoodId)
-            .IsRequired()
+            .IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

@@ -20,13 +20,13 @@ public static class FoodLogHelpers
         return log.Entries
             .Select(e => new FoodLogEntryResult(
                 Id: e.Id,
-                Name: e.Food.Name,
-                Brand: e.Food.Brand,
+                Name: e.Food?.Name ?? "Legacy food",
+                Brand: e.Food?.Brand,
                 QuantityInGrams: e.QuantityInGrams,
-                Calories: CalculateTotal(e.Food.Calories, e.QuantityInGrams),
-                Protein: CalculateTotal(e.Food.Protein, e.QuantityInGrams),
-                Carbohydrates: CalculateTotal(e.Food.Carbohydrates, e.QuantityInGrams),
-                Fats: CalculateTotal(e.Food.Fats, e.QuantityInGrams)))
+                Calories: CalculateTotal(e.Food?.Calories, e.QuantityInGrams),
+                Protein: CalculateTotal(e.Food?.Protein, e.QuantityInGrams),
+                Carbohydrates: CalculateTotal(e.Food?.Carbohydrates, e.QuantityInGrams),
+                Fats: CalculateTotal(e.Food?.Fats, e.QuantityInGrams)))
             .ToList();
     }
 

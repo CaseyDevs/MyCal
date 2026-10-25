@@ -19,6 +19,7 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
            .HasDatabaseName("IX_Users_IdentityUserId");
 
         builder.Property(user => user.OnboardingStatus)
-            .HasDefaultValue(OnboardingStatus.Pending);
+            .HasDefaultValue(OnboardingStatus.Pending)
+            .HasSentinel(OnboardingStatus.Pending);
     }
 }
