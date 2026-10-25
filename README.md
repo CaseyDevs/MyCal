@@ -18,7 +18,13 @@ The browser scanner works on localhost or an HTTPS origin. A phone reaching your
 
 ### Food search
 
-Custom foods, recents, favourites, and Open Food Facts work without a USDA key. For generic-food search, configure your own key locally:
+The food picker opens on **Generic**, with 63 built-in staples that need no API key or provider request: chicken, turkey, beef mince, fish, eggs, oats, rice, pasta, bread, dairy, tofu, pulses, fruit, vegetables, oils, and nuts. Filter instantly using names such as chicken breast, porridge oats, courgette, or aubergine. Raw, cooked, dry, and drained entries stay distinct. All bundled values use grams of edible food, including milk and oils; no density conversion is assumed.
+
+These staples are a selected snapshot of USDA SR Legacy (April 2018), not a complete catalogue. Their original descriptions, FDC IDs, archive checksum, and source nutrient values are in `MyCal.Infrastructure/Nutrition/Data/generic-foods.json`. Calories are retained independently; USDA total carbohydrate is reduced by known fibre for UK-style available carbohydrate. Existing logged entries retain their own snapshots. USDA data is [CC0/public domain](https://fdc.nal.usda.gov/api-guide/), attributed to U.S. Department of Agriculture, Agricultural Research Service, FoodData Central.
+
+To verify or reproduce the snapshot, download the [official SR Legacy CSV ZIP](https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip), then run `python3 scripts/import-generic-foods.py /path/to/archive.zip --check`. Omit `--check` to regenerate the same selected rows. This never modifies a database.
+
+Custom foods, recents, favourites, and Open Food Facts also work without a USDA key. For a larger online generic-food catalogue, configure your own key locally:
 
 ```sh
 dotnet user-secrets set --project MyCal.Web "UsdaFoodData:ApiKey" "YOUR_KEY"
@@ -26,7 +32,7 @@ dotnet user-secrets set --project MyCal.Web "UsdaFoodData:ApiKey" "YOUR_KEY"
 
 Restart the app. During development, the app also reuses the nutrition key from the original API's user-secret store, if present; it does not import the old database settings. Keys are sent to USDA in an HTTP header. No real credentials belong in source control.
 
-Search runs both providers concurrently and displays each source as it arrives. Packaged-food search defaults to products sold in the UK; switch to Worldwide for imports or missing country tags. Generic results include Foundation, SR Legacy, and FNDDS foods, ranked to bring plain foods ahead of unrequested breaded or deli variants. Raw and cooked entries remain separate. Search is submitted explicitly, with provider-specific caching, shared-request limits, and an eight-second network timeout. Ten simultaneous identical searches reuse cached provider results rather than spending ten provider requests.
+The main search shows matching built-in staples first, then runs both providers concurrently and displays each source as it arrives. Packaged-food search defaults to products sold in the UK; switch to Worldwide for imports or missing country tags. Generic results include Foundation, SR Legacy, and FNDDS foods, ranked to bring plain foods ahead of unrequested breaded or deli variants. Raw and cooked entries remain separate. Search is submitted explicitly, with provider-specific caching, shared-request limits, and an eight-second network timeout. Ten simultaneous identical searches reuse cached provider results rather than spending ten provider requests.
 
 Food data comes from [USDA FoodData Central](https://fdc.nal.usda.gov/) and [Open Food Facts](https://world.openfoodfacts.org/) (ODbL). Keep this attribution when reusing the interface. The latter is community-maintained: verify package values and whether the label is per 100 g or per 100 ml. The app requires that unit check before logging a packaged result. Missing nutrients stay unknown, never silently zero. Camera decoding uses a bundled [ZXing browser library](https://github.com/zxing-js/browser); its license is included with the asset.
 

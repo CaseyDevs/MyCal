@@ -13,11 +13,20 @@
 <Icon Name="close" />
 </button>
 </header>
-    <div class="tabs" role="tablist" aria-label="Food source">@foreach (var tab in new[] { "Search", "Recents", "Favourites", "Custom", "Barcode" }) { <button role="tab" aria-selected="@(_tab == tab)" class="@(_tab == tab ? "selected" : "")" @onclick="() => ChangeTab(tab)">@tab</button> }
+    <div class="tabs" role="tablist" aria-label="Food source">@foreach (var tab in new[] { "Generic", "Search", "Recents", "Favourites", "Custom", "Barcode" }) { <button role="tab" aria-selected="@(_tab == tab ? "true" : "false")" class="@(_tab == tab ? "selected" : "")" @onclick="() => ChangeTab(tab)">@tab</button> }
 </div>
     <div class="sheet-body">
     @if (Error is not null) { <div class="notice error" role="alert">@Error</div> }
     @if (_notice is not null) { <div class="notice small">@_notice</div> }
+    @if (_tab == "Generic")
+    {
+        <div class="search-box">
+<Icon Name="search" />
+<input aria-label="Filter generic foods" placeholder="Chicken breast, oats, banana…" value="@_genericQuery" @oninput="FilterGenericFoods" maxlength="100" />
+</div>
+        <p class="muted small">Everyday staples, ready instantly. USDA reference averages per 100 g of edible food. Choose raw or cooked to match how you weighed it; milk and oils also use grams here.</p>
+        <button class="text-button" @onclick="SearchMoreFoods">Search more foods and brands →</button>
+    }
     @if (_tab == "Search")
     {
         <form class="search-box" @onsubmit="Search" @onsubmit:preventDefault="true">
@@ -29,7 +38,7 @@
 <option value="@FoodSearchMarket.UnitedKingdom">United Kingdom</option>
 <option value="@FoodSearchMarket.Worldwide">Worldwide</option>
 </select></label>
-        <p class="muted small">Generic foods from USDA · Packaged foods from Open Food Facts. Raw and cooked values differ; choose the matching preparation.</p>
+        <p class="muted small">Built-in staples and online generic foods from USDA · Packaged foods from Open Food Facts. Raw and cooked values differ; choose the matching preparation.</p>
         @if (_searching) { <p class="muted small" role="status">Searching sources… Results appear as each source responds.</p> }
     }
     @if (_tab == "Barcode")
@@ -74,11 +83,11 @@
 <button class="button secondary" type="submit">Preview portion →</button>
         </EditForm>
     }
-    @if (_tab is "Search" or "Recents" or "Favourites")
+    @if ((_tab is "Generic" or "Search" or "Recents" or "Favourites") && _selected is null)
     {
         @if (_foods.Count == 0 && !_searching) { <div class="empty-mini">
 <Icon Name="search" />
-<p>@(_tab == "Search" ? "Search to find your next entry." : "Your saved foods will appear here.")</p>
+<p>@(_tab == "Generic" ? "No matching staples. Search more foods or create a custom food." : _tab == "Search" ? "Search to find your next entry." : "Your saved foods will appear here.")</p>
 <button class="text-button" @onclick='() => ChangeTab("Custom")'>Create a custom food →</button>
 </div> }
         @foreach (var food in _foods) { <button class="food-result" @onclick="() => Select(food)">
@@ -96,6 +105,7 @@
     @if (_selected is not null)
     {
         <section class="portion-card">
+<button class="text-button" @onclick="ClearSelection">← Choose another food</button>
 <div class="section-heading">
 <h3>@_selected.Name</h3>
 <button class="text-button" @onclick="ToggleFavourite" disabled="@(Busy || (_selected.RequiresBasisConfirmation && !_basisConfirmed))">@(_selected.IsFavourite ? "★ Saved" : "☆ Favourite")</button>
@@ -116,7 +126,7 @@
 </div>
         }
         <div class="form-grid">
-<label>Amount (@Unit(EffectiveFood.Unit))<input type="number" step="any" min="0.01" max="100000" @bind="_amount" />
+<label>Amount (@Unit(EffectiveFood.Unit))<input type="number" step="any" min="0.01" max="100000" @bind="_amount" @bind:event="oninput" />
 </label>
 <label>Meal<select @bind="_meal">@foreach (var meal in Enum.GetValues<Meal>()) { <option value="@meal">@meal</option> }
 </select>
@@ -137,7 +147,7 @@
 <Icon Name="plus" />@(Busy ? "Saving…" : "Add to diary")</button>
 </section>
     }
-    <p class="source-note">Food data: <a href="https://fdc.nal.usda.gov/" target="_blank" rel="noopener">USDA FoodData Central</a> and <a href="https://world.openfoodfacts.org/" target="_blank" rel="noopener">Open Food Facts</a> (ODbL). Product coverage and accuracy vary; check your package.</p>
+    <p class="source-note">Food data: <a href="https://fdc.nal.usda.gov/" target="_blank" rel="noopener">USDA FoodData Central</a> (built-in staples: SR Legacy, April 2018) and <a href="https://world.openfoodfacts.org/" target="_blank" rel="noopener">Open Food Facts</a> (ODbL). Product coverage and accuracy vary; check your package.</p>
     </div>
 </section>
 </div>
