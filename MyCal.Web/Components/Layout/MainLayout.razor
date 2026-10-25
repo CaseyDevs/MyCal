@@ -1,23 +1,21 @@
 @inherits LayoutComponentBase
-
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
-
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
-
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
+<div class="app-shell">
+    <aside class="sidebar">
+<a class="brand" href="/">mycal<span>●</span>
+</a>
+<p class="brand-caption">YOUR DAILY PICTURE</p>
+<NavMenu />
+<div class="sidebar-bottom">
+<span class="beta-badge">PRIVATE BETA</span>
+<p>Small habits.<br />A clearer picture.</p>
 </div>
-
-<div id="blazor-error-ui">
-    An unhandled error has occurred.
-    <a href="" class="reload">Reload</a>
-    <a class="dismiss">🗙</a>
+</aside>
+    <main class="main-content">@Body<footer class="app-footer">Built for your everyday. <span>MyCal · Private beta</span>
+</footer>
+</main>
+</div>
+<div id="blazor-error-ui" role="alert">The connection was interrupted. <a href="">Reload to reconnect</a>.</div>
+<div id="components-reconnect-modal" class="reconnect" role="status">
+<div class="panel">Reconnecting to MyCal… Keep this page open. <a href="">Reload</a>
+</div>
 </div>

@@ -1,21 +1,22 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <base href="/" />
-    <link rel="stylesheet" href="@Assets["lib/bootstrap/dist/css/bootstrap.min.css"]" />
-    <link rel="stylesheet" href="@Assets["app.css"]" />
-    <link rel="stylesheet" href="@Assets["MyCal.Web.styles.css"]" />
-    <ImportMap />
-    <link rel="icon" type="image/png" href="favicon.png" />
-    <HeadOutlet />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#8370e6" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<base href="/" />
+<link rel="stylesheet" href="@Assets["app.css"]" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<link rel="icon" href="/icon.svg" type="image/svg+xml" />
+<script src="/js/theme.js">
+</script>
+<ImportMap />
+<HeadOutlet />
 </head>
-
 <body>
-    <Routes />
-    <script src="@Assets["_framework/blazor.web.js"]"></script>
+<Routes @rendermode="new InteractiveServerRenderMode(prerender: false)" />
+<script src="@Assets["_framework/blazor.web.js"]">
+</script>
 </body>
-
 </html>
