@@ -140,6 +140,31 @@ public sealed class TrackerIntegrationTests
         Assert.IsNull(progress.AverageProtein);
     }
     [TestMethod]
+    public async Task DietPreferencesArePrivateDatedAndSurviveReloadAndProfileEdits()
+    {
+        var id = await Person();
+        var other = await Person();
+        var original = (await _store.Tracker.DiaryAsync(id, Today)).Target!;
+        var preset = MyCal.Application.Calculators.NutritionMath.AllocateMacros(2000, 75, GoalType.LoseWeight,
+            TrainingType.ResistanceTraining, ProteinPreference.Higher, DietPreference.LowerFat);
+        await _store.Tracker.SaveTargetAsync(id, preset);
+        Assert.AreEqual(original, (await _store.Tracker.DiaryAsync(id, Today)).Target);
+        var saved = (await _store.Tracker.TargetsAsync(id)).First();
+        Assert.AreEqual(Today.AddDays(1), saved.EffectiveFrom);
+        Assert.AreEqual(165m, saved.Protein);
+        Assert.AreEqual(preset.Diet, saved.Diet);
+        Assert.AreEqual(preset.Training, saved.Training);
+        Assert.AreEqual(preset.ProteinPreference, saved.ProteinPreference);
+        Assert.AreNotEqual(saved.Id, (await _store.Tracker.TargetsAsync(other)).First().Id);
+        await _store.Tracker.SaveProfileAsync(id, "test@example.com", new() { Name = "Updated", Weight = 80 });
+        Assert.AreEqual(saved, (await _store.Tracker.TargetsAsync(id)).First());
+        preset.Diet = DietPreference.LowerCarb;
+        await _store.Tracker.SaveTargetAsync(id, preset);
+        Assert.AreEqual(2, (await _store.Tracker.TargetsAsync(id)).Count);
+        Assert.AreEqual(DietPreference.LowerCarb, (await _store.Tracker.TargetsAsync(id)).First().Diet);
+        Assert.AreEqual(original, (await _store.Tracker.DiaryAsync(id, Today)).Target);
+    }
+    [TestMethod]
     public async Task ReviewIsRepeatableStaleSafePrivateAndSingleAcceptance()
     {
         var id = await Person();
@@ -151,9 +176,12 @@ public sealed class TrackerIntegrationTests
             t.EffectiveFrom = Today.AddDays(-28);
             t.Calories = 2000;
             t.MaintenanceEstimate = 2600;
-            t.Protein = 120;
-            t.Fat = 60;
-            t.Carbohydrates = 245;
+            t.Protein = 165;
+            t.Fat = 400m / 9;
+            t.Carbohydrates = 235;
+            t.Training = TrainingType.ResistanceTraining;
+            t.ProteinPreference = ProteinPreference.Higher;
+            t.Diet = DietPreference.LowerFat;
             // Make a 100 kcal reduction permissible under the 25% deficit rule.
             t.MaintenanceEstimate = 2500;
             await db.SaveChangesAsync();
@@ -180,6 +208,12 @@ public sealed class TrackerIntegrationTests
         await Assert.ThrowsExactlyAsync<ValidationException>(() => _store.Tracker.AcceptReviewAsync(id, fresh.Id));
         Assert.AreEqual(2000m, (await _store.Tracker.DiaryAsync(id, Today)).Target!.Calories);
         Assert.AreEqual(1900m, (await _store.Tracker.DiaryAsync(id, Today.AddDays(1))).Target!.Calories);
+        var adjusted = (await _store.Tracker.DiaryAsync(id, Today.AddDays(1))).Target!;
+        Assert.AreEqual(165m, adjusted.Protein);
+        Assert.AreEqual(400m / 940m, adjusted.Fat * 9 / (adjusted.Carbohydrates * 4), .000001m);
+        Assert.AreEqual(TrainingType.ResistanceTraining, adjusted.Training);
+        Assert.AreEqual(ProteinPreference.Higher, adjusted.ProteinPreference);
+        Assert.AreEqual(DietPreference.LowerFat, adjusted.Diet);
         Assert.IsNull((await _store.Tracker.ReviewAsync(id)).SuggestedCalories);
     }
 }

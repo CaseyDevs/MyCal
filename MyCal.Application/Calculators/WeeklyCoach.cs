@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using MyCal.Domain.Entity;
 using MyCal.Domain.Enum;
 using MyCal.Shared.Tracking;
@@ -39,6 +40,12 @@ public static class WeeklyCoach
         var proposed = target.Calories + (loss < .25m ? -100 : 100);
         if (proposed < target.Calories && (proposed < 1500 || proposed < target.MaintenanceEstimate * .75m))
             return new("Hold your target: a further cut would cross the beta's 1,500 kcal or 25% estimated-deficit limit.", WeeklyLossPercent: loss);
+        try
+        { NutritionMath.AdjustCalories(target, proposed); }
+        catch (ValidationException)
+        {
+            return new("Hold your target: this change cannot preserve your protein and macro allocation within the beta's limits. Set manual targets instead.", WeeklyLossPercent: loss);
+        }
         return new(loss < .25m
             ? "Your recorded weight trend is slower than the selected range. Consider 100 kcal less per day."
             : "Your recorded weight trend is faster than the selected range. Consider 100 kcal more per day.", proposed, loss);
