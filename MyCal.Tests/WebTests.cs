@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Configuration;
 using MyCal.Application.Tracking;
 using MyCal.Infrastructure.Identity;
 using MyCal.Shared.Tracking;
@@ -16,6 +17,31 @@ namespace MyCal.Tests;
 [TestClass, DoNotParallelize]
 public sealed class WebTests
 {
+    [TestMethod]
+    public async Task NutritionProviderFailuresDoNotTriggerHiddenRetries()
+    {
+        var calls = 0;
+        using var app = _app.WithWebHostBuilder(b =>
+        {
+            b.ConfigureAppConfiguration((_, c) => c.AddInMemoryCollection(
+                new Dictionary<string, string?> { ["UsdaFoodData:ApiKey"] = "test-key" }));
+            b.ConfigureServices(s => s.AddHttpClient("nutrition").ConfigurePrimaryHttpMessageHandler(
+                () => new UnavailableHandler(() => Interlocked.Increment(ref calls))));
+        });
+        var search = app.Services.GetRequiredService<IFoodSearch>();
+        var result = await search.SearchAsync("provider outage");
+        Assert.AreEqual(2, calls, "Each provider gets one request; retries must not bypass its quota.");
+        Assert.AreEqual(0, result.Foods.Count);
+        Assert.IsNotNull(result.Notice);
+    }
+    private sealed class UnavailableHandler(Action called) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            called();
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
+        }
+    }
     private static TestStore _store = null!;
     private static WebApplicationFactory<Program> _app = null!;
     private static readonly List<(string Id, string Email)> People = [];

@@ -26,6 +26,8 @@ dotnet user-secrets set --project MyCal.Web "UsdaFoodData:ApiKey" "YOUR_KEY"
 
 Restart the app. During development, the app also reuses the nutrition key from the original API's user-secret store, if present; it does not import the old database settings. Keys are sent to USDA in an HTTP header. No real credentials belong in source control.
 
+Search runs both providers concurrently and displays each source as it arrives. Packaged-food search defaults to products sold in the UK; switch to Worldwide for imports or missing country tags. Generic results include Foundation, SR Legacy, and FNDDS foods, ranked to bring plain foods ahead of unrequested breaded or deli variants. Raw and cooked entries remain separate. Search is submitted explicitly, with provider-specific caching, shared-request limits, and an eight-second network timeout. Ten simultaneous identical searches reuse cached provider results rather than spending ten provider requests.
+
 Food data comes from [USDA FoodData Central](https://fdc.nal.usda.gov/) and [Open Food Facts](https://world.openfoodfacts.org/) (ODbL). Keep this attribution when reusing the interface. The latter is community-maintained: verify package values and whether the label is per 100 g or per 100 ml. The app requires that unit check before logging a packaged result. Missing nutrients stay unknown, never silently zero. Camera decoding uses a bundled [ZXing browser library](https://github.com/zxing-js/browser); its license is included with the asset.
 
 ## Daily use and calculations

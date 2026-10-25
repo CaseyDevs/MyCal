@@ -23,9 +23,14 @@
         <form class="search-box" @onsubmit="Search" @onsubmit:preventDefault="true">
 <Icon Name="search" />
 <input aria-label="Search foods" placeholder="Search a food or brand…" @bind="_query" maxlength="100" minlength="2" />
-<button class="button primary" disabled="@Busy">@(Busy ? "Searching…" : "Search")</button>
+<button class="button primary" disabled="@Busy">Search</button>
 </form>
-        <p class="muted small">Generic foods from USDA · Packaged foods from Open Food Facts</p>
+        <label class="small">Packaged-food region<select @bind="_market" @bind:after="ChangeMarket">
+<option value="@FoodSearchMarket.UnitedKingdom">United Kingdom</option>
+<option value="@FoodSearchMarket.Worldwide">Worldwide</option>
+</select></label>
+        <p class="muted small">Generic foods from USDA · Packaged foods from Open Food Facts. Raw and cooked values differ; choose the matching preparation.</p>
+        @if (_searching) { <p class="muted small" role="status">Searching sources… Results appear as each source responds.</p> }
     }
     @if (_tab == "Barcode")
     {
@@ -71,7 +76,7 @@
     }
     @if (_tab is "Search" or "Recents" or "Favourites")
     {
-        @if (_foods.Count == 0) { <div class="empty-mini">
+        @if (_foods.Count == 0 && !_searching) { <div class="empty-mini">
 <Icon Name="search" />
 <p>@(_tab == "Search" ? "Search to find your next entry." : "Your saved foods will appear here.")</p>
 <button class="text-button" @onclick='() => ChangeTab("Custom")'>Create a custom food →</button>
@@ -81,6 +86,7 @@
 <span>
 <strong>@food.Name</strong>
 <small>@food.Brand · @food.Source</small>
+<small>P @(food.Protein is {} p ? Number(p) + " g" : "unknown") · C @(food.Carbohydrates is {} c ? Number(c) + " g" : "unknown") · F @(food.Fat is {} f ? Number(f) + " g" : "unknown")</small>
 </span>
 <span class="result-calories">@Number(food.Calories)<small>kcal / @Number(food.ReferenceQuantity) @(food.RequiresBasisConfirmation ? "g or ml" : Unit(food.Unit))</small>
 </span>

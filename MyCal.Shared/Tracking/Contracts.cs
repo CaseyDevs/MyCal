@@ -66,7 +66,9 @@ public sealed class FoodInput
 
 public interface IFoodSearch
 {
-    Task<FoodSearchPage> SearchAsync(string query, CancellationToken ct = default);
+    Task<FoodSearchPage> SearchAsync(string query, CancellationToken ct = default, FoodSearchMarket market = FoodSearchMarket.UnitedKingdom);
+    IAsyncEnumerable<FoodSearchPage> SearchProgressivelyAsync(string query, CancellationToken ct = default, FoodSearchMarket market = FoodSearchMarket.UnitedKingdom);
     Task<FoodItem?> BarcodeAsync(string barcode, CancellationToken ct = default);
 }
-public sealed record FoodSearchPage(IReadOnlyList<FoodItem> Foods, string? Notice = null);
+public enum FoodSearchMarket { UnitedKingdom, Worldwide }
+public sealed record FoodSearchPage(IReadOnlyList<FoodItem> Foods, string? Notice = null, bool IsComplete = true);
