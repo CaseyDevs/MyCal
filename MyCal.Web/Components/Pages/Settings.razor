@@ -76,21 +76,37 @@ else { <p class="muted small">@(_revisions.FirstOrDefault() is { } latest ? $"La
 <ValidationSummary class="notice error" />
 <div class="form-grid">
 <label class="span-2">Goal<InputSelect @bind-Value="_target.Goal">
-<option value="@GoalType.LoseWeight">Lose weight</option>
+<option value="@GoalType.LoseWeight">Cut · lose fat</option>
 <option value="@GoalType.MaintainWeight">Maintain weight</option>
-<option value="@GoalType.GainWeight">Gain weight</option>
+<option value="@GoalType.GainWeight">Lean gain · gradual weight gain</option>
 </InputSelect>
 </label>
+<label class="span-2">Training focus<InputSelect @bind-Value="_target.Training">
+<option value="@TrainingType.GeneralActivity">General activity or cardio</option>
+<option value="@TrainingType.ResistanceTraining">Resistance training · build or maintain muscle</option>
+</InputSelect></label>
+<label class="span-2">Protein preference<InputSelect @bind-Value="_target.ProteinPreference">
+<option value="@ProteinPreference.Standard">Standard · 1.6 g/kg</option>
+<option value="@ProteinPreference.Higher">Higher · 2.2 g/kg for a lifting cut, otherwise 2.0 g/kg</option>
+</InputSelect></label>
+<label class="span-2">Diet preference<InputSelect @bind-Value="_target.Diet">
+<option value="@DietPreference.Custom">Custom · edit grams manually</option>
+<option value="@DietPreference.Balanced">Balanced · 30% of starting calories from fat</option>
+<option value="@DietPreference.LowerFat">Lower fat · 20% of starting calories from fat</option>
+<option value="@DietPreference.LowerCarb">Lower carb · 40% of starting calories from fat</option>
+</InputSelect></label>
+<p class="span-2 muted small">Apply preferences to fill the grams below, then save. Protein uses your profile weight (@Number(UserProfile.Weight) kg). Higher protein supports muscle retention alongside resistance training; muscle gain during a cut isn't guaranteed.</p>
 <label class="span-2">Calories (kcal)<InputNumber @bind-Value="_target.Calories" step="1" />
 </label>
-<label>Protein (g)<InputNumber @bind-Value="_target.Protein" step="any" />
+<label>Protein (g)<InputNumber @bind-Value="_target.Protein" @bind-Value:after="MarkCustom" step="any" />
 </label>
-<label>Fat (g)<InputNumber @bind-Value="_target.Fat" step="any" />
+<label>Fat (g)<InputNumber @bind-Value="_target.Fat" @bind-Value:after="MarkCustom" step="any" />
 </label>
-<label class="span-2">Carbohydrate (g)<InputNumber @bind-Value="_target.Carbohydrates" step="any" />
+<label class="span-2">Carbohydrate (g)<InputNumber @bind-Value="_target.Carbohydrates" @bind-Value:after="MarkCustom" step="any" />
 </label>
 </div>
 <div class="button-row">
+<button type="button" class="text-button" @onclick="ApplyPreferences" disabled="@(Busy || _target.Diet == DietPreference.Custom)">Apply diet preferences</button>
 <button type="button" class="text-button" @onclick="RecalculateCarbs">Fill remaining calories with carbs</button>
 <button type="button" class="text-button" @onclick="StartingTargets">Use starting estimate</button>
 </div>
@@ -99,9 +115,12 @@ else { <p class="muted small">@(_revisions.FirstOrDefault() is { } latest ? $"La
 <details class="explanation">
 <summary>How the starting estimate works</summary>
 <p>Mifflin–St Jeor estimates resting energy from weight, height, age, and the selected coefficient. An activity multiplier estimates maintenance. Fat loss starts 15% below maintenance (at least 1,500 kcal in this beta); maintenance uses that estimate; gain starts 5% above it.</p>
-<p>Protein starts at 1.6 g/kg, fat at 30% of calories, and carbohydrate uses the remaining calories. These are editable starting choices, not a measurement of your metabolism. Exercise is already part of the activity estimate; calories aren't automatically added back.</p>
+<p>Standard protein starts at 1.6 g/kg of body weight. Higher protein uses 2.2 g/kg for a resistance-training cut and 2.0 g/kg otherwise. Research supports higher protein during energy restriction, but these preset amounts are editable choices, not a uniquely optimal intake. They use total body weight, not lean mass.</p>
+<p>Presets allocate 20%, 30%, or 40% of starting calories to fat, then use the remaining calories for carbohydrate after protein. Lower carb is relative to the balanced option; it is not a ketogenic plan. Impossible combinations need manual adjustment. Accepted weekly changes keep protein grams and your saved carb-to-fat energy split, including custom targets.</p>
+<p>Exercise is already part of the activity estimate; calories aren't automatically added back. Preferences fill targets only when you apply them. Profile updates do not recalculate saved plans.</p>
 <p>
 <a href="https://pubmed.ncbi.nlm.nih.gov/2305711/" target="_blank" rel="noopener">Equation research ↗</a> · <a href="https://doi.org/10.1186/s12970-017-0177-8" target="_blank" rel="noopener">Protein research ↗</a>
+ · <a href="https://pubmed.ncbi.nlm.nih.gov/25014731/" target="_blank" rel="noopener">Protein during fat loss ↗</a>
 </p>
 </details>
 <details class="explanation">
