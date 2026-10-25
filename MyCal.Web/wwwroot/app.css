@@ -6,7 +6,7 @@
   --text: #272633;
   --muted: #72707f;
   --border: #eae8f1;
-  --accent: #7963d4;
+  --accent: #7057c6;
   --accent-soft: #efebfc;
   --accent-deep: #6954c4;
   --green: #71926a;
@@ -573,7 +573,7 @@ small,
 .macro-percent {
   margin-left: auto;
   font-size: 10px;
-  color: var(--macro);
+  color: var(--muted);
 }
 .macro-number {
   font-size: 23px;
