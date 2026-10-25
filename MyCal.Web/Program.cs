@@ -22,7 +22,8 @@ if (builder.Environment.IsDevelopment() && string.IsNullOrEmpty(builder.Configur
     if (prototype["UsdaFoodData:ApiKey"] is { } key)
         builder.Configuration["UsdaFoodData:ApiKey"] = key;
 }
-builder.AddServiceDefaults();
+// Nutrition requests use explicit quotas, cancellation, and a bounded timeout.
+builder.AddServiceDefaults(useHttpResilience: false);
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 builder.Services.AddRazorPages();
 builder.Services.AddCascadingAuthenticationState();
@@ -34,7 +35,7 @@ builder.Services.AddScoped<BetaAccounts>();
 builder.Services.AddMemoryCache();
 // A provider failure is shown once; inherited retries would spend uncounted API quota.
 builder.Services.AddHttpClient("nutrition", c => c.Timeout = TimeSpan.FromSeconds(8))
-    .RemoveAllResilienceHandlers().RemoveAllLoggers();
+    .RemoveAllLoggers();
 builder.Services.AddSingleton<IFoodSearch, FoodCatalog>();
 builder.Services.AddProblemDetails();
 builder.Services.AddAntiforgery(o => o.HeaderName = "X-CSRF-TOKEN");
