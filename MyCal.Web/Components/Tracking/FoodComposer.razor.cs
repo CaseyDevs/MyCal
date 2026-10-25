@@ -17,7 +17,7 @@ public partial class FoodComposer
     public EventCallback<FoodSelection> OnAdd { get; set; }
     [Parameter]
     public EventCallback OnClose { get; set; }
-    private string _tab = "Recents", _query = "", _barcode = "";
+    private string _tab = "Generic", _query = "", _genericQuery = "", _barcode = "";
     private string? _notice;
     private FoodSearchMarket _market = FoodSearchMarket.UnitedKingdom;
     private CancellationTokenSource? _searchCancellation;
@@ -47,7 +47,7 @@ public partial class FoodComposer
     protected override async Task OnInitializedAsync()
     {
         _meal = InitialMeal;
-        await Run(async () => _foods = (await Tracker.SavedFoodsAsync(IdentityId)).ToList());
+        await Run(() => { _foods = FoodSearch.SearchGenericFoods().ToList(); return Task.CompletedTask; });
     }
     private async Task ChangeTab(string tab)
     {
@@ -58,8 +58,23 @@ public partial class FoodComposer
         Error = null;
         _notice = null;
         _foods = [];
+        if (tab == "Generic")
+            _foods = FoodSearch.SearchGenericFoods(_genericQuery).ToList();
         if (tab is "Recents" or "Favourites")
             await Run(async () => _foods = (await Tracker.SavedFoodsAsync(IdentityId, tab == "Favourites")).ToList());
+    }
+    private void FilterGenericFoods(ChangeEventArgs e)
+    {
+        _genericQuery = e.Value?.ToString() ?? "";
+        _selected = null;
+        _foods = FoodSearch.SearchGenericFoods(_genericQuery).ToList();
+    }
+    private async Task SearchMoreFoods()
+    {
+        _query = _genericQuery;
+        await ChangeTab("Search");
+        if (_query.Trim().Length >= 2)
+            await Search();
     }
     private Task ChangeMarket() => _query.Trim().Length >= 2 ? Search() : Task.CompletedTask;
     private async Task Search()
@@ -112,6 +127,7 @@ public partial class FoodComposer
         _basisUnit = food.Unit;
         _basisConfirmed = false;
     }
+    private void ClearSelection() => _selected = null;
     private void SelectCustom()
     {
         Select(_custom.ToFood());

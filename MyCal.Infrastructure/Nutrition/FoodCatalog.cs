@@ -20,6 +20,8 @@ public sealed class FoodCatalog(IHttpClientFactory clients, IMemoryCache cache, 
     // Bounded striped locks coalesce identical searches without retaining one lock per query.
     private readonly SemaphoreSlim[] _searchLocks = Enumerable.Range(0, 64).Select(_ => new SemaphoreSlim(1)).ToArray();
 
+    public IReadOnlyList<FoodItem> SearchGenericFoods(string query = "") => GenericFoods.Search(query);
+
     public async Task<FoodSearchPage> SearchAsync(string query, CancellationToken ct = default,
         FoodSearchMarket market = FoodSearchMarket.UnitedKingdom)
     {
@@ -37,13 +39,17 @@ public sealed class FoodCatalog(IHttpClientFactory clients, IMemoryCache cache, 
             throw new ValidationException("Search using 2–100 characters.");
         if (!Enum.IsDefined(market))
             throw new ValidationException("Choose UK or worldwide packaged foods.");
+        ct.ThrowIfCancellationRequested();
+        var foods = SearchGenericFoods(query).ToList();
+        if (foods.Count > 0)
+            yield return new(foods, IsComplete: false);
+        ct.ThrowIfCancellationRequested();
         using var lifetime = CancellationTokenSource.CreateLinkedTokenSource(ct);
         var pending = new List<Task<FoodSearchPage>>
         {
             SearchProvider("usda", query, market, lifetime.Token),
             SearchProvider("off-search", query, market, lifetime.Token)
         };
-        var foods = new List<FoodItem>();
         var notices = new List<string>();
         try
         {
@@ -93,7 +99,7 @@ public sealed class FoodCatalog(IHttpClientFactory clients, IMemoryCache cache, 
         var generic = provider == "usda";
         var apiKey = configuration["UsdaFoodData:ApiKey"];
         if (generic && string.IsNullOrWhiteSpace(apiKey))
-            return new([], "Add a USDA API key to enable generic-food search. Packaged and custom foods are available.");
+            return new([], "Add a USDA API key for more online generic foods. Built-in generic foods remain available.");
         if (!Permit(provider, generic ? 25 : 10) || (generic && !Permit("usda-hour", 900, TimeSpan.FromHours(1))))
             return new([], generic ? "Generic search is busy. Try again shortly." :
                 "Packaged-food search has reached its minute limit. Use recents, favourites, or a custom food.");
@@ -197,7 +203,8 @@ public sealed class FoodCatalog(IHttpClientFactory clients, IMemoryCache cache, 
             return null;
         var energy = Number(n, "energy-kcal_100g") ?? (Number(n, "energy-kj_100g") ?? Number(n, "energy_100g")) / 4.184m;
         var name = Text(food, "product_name_en");
-        if (string.IsNullOrWhiteSpace(name)) name = Text(food, "product_name");
+        if (string.IsNullOrWhiteSpace(name))
+            name = Text(food, "product_name");
         if (energy is null || string.IsNullOrWhiteSpace(name))
             return null;
         var carbs = Number(n, "carbohydrates_100g");

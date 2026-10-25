@@ -63,6 +63,8 @@ public static class TrackerApi
             await service.CopyAsync(Id(user), date, input.Destination, input.Meal, ct);
             return Results.NoContent();
         });
+        api.MapGet("/foods/generic", (string? search, IFoodSearch foods) =>
+            Results.Ok(new FoodSearchPage(foods.SearchGenericFoods(search ?? ""))));
         api.MapGet("/foods", async (string search, FoodSearchMarket? market, IFoodSearch foods, CancellationToken ct) =>
             Results.Ok(await foods.SearchAsync(search, ct, market ?? FoodSearchMarket.UnitedKingdom)));
         api.MapGet("/foods/barcode/{barcode}", async (string barcode, IFoodSearch foods, CancellationToken ct) =>

@@ -163,6 +163,76 @@ test("daily food can be saved, edited, copied, completed, and revisited", async 
     await context.close();
   }
 });
+test("generic staples filter instantly and log the selected raw portion", async ({
+  browser,
+}, testInfo) => {
+  const { context, page, errors } = await member(browser, testInfo);
+  try {
+    await page.getByRole("button", { name: "Add food", exact: true }).click();
+    await expect(
+      page.getByRole("tab", { name: "Generic", exact: true }),
+    ).toHaveAttribute("aria-selected", "true");
+    await expect(page.locator(".food-result")).toHaveCount(63);
+    await page
+      .getByLabel("Filter generic foods", { exact: true })
+      .fill("chicken breast raw");
+    await expect(page.locator(".food-result")).toHaveCount(1);
+    await page
+      .getByRole("button", { name: /Chicken breast, skinless, boneless, raw/ })
+      .click();
+    await expect(page.locator(".food-result")).toHaveCount(0);
+    await page.getByRole("button", { name: /Choose another food/ }).click();
+    await expect(page.locator(".food-result")).toHaveCount(1);
+    await page.locator(".food-result").click();
+    await page.getByLabel("Amount (g)", { exact: true }).fill("150");
+    await expect(page.locator(".portion-nutrition strong")).toContainText(
+      "180",
+    );
+    await expect(
+      page.getByText("Check the package label.", { exact: true }),
+    ).not.toBeVisible();
+    await screenshot(page, testInfo, "generic-light");
+    await page
+      .getByRole("button", { name: "Add to diary", exact: true })
+      .click();
+    await expect(page.getByRole("dialog")).not.toBeVisible();
+    await expect(page.locator(".energy-value")).toContainText("180");
+    const reference = await context.request.get(
+      "/api/foods/generic?search=white%20rice%20cooked",
+    );
+    expect(reference.ok()).toBe(true);
+    expect((await reference.json()).foods[0].sourceId).toBe("169757");
+    await page.getByRole("link", { name: "Settings", exact: true }).click();
+    await page
+      .getByRole("combobox", { name: "Appearance", exact: true })
+      .selectOption("dark");
+    await page.getByRole("link", { name: "Today", exact: true }).click();
+    await page.getByRole("button", { name: "Add food", exact: true }).click();
+    await page
+      .getByLabel("Filter generic foods", { exact: true })
+      .fill("white rice cooked");
+    await expect(page.locator(".food-result")).toHaveCount(1);
+    await page.locator(".food-result").click();
+    await expect(page.locator(".portion-nutrition strong")).toContainText(
+      "130",
+    );
+    await screenshot(page, testInfo, "generic-dark");
+    await page
+      .getByLabel("Filter generic foods", { exact: true })
+      .fill("missing-staple-xyz");
+    await expect(page.locator(".food-result")).toHaveCount(0);
+    await expect(page.getByText(/No matching staples/)).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /Search more foods and brands/ }),
+    ).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).not.toBeVisible();
+    expect(errors).toEqual([]);
+  } finally {
+    await context.close();
+  }
+});
+
 test("future targets preserve today and both themes remain usable", async ({
   browser,
 }, testInfo) => {

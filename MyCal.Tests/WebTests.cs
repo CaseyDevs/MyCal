@@ -113,12 +113,22 @@ public sealed class WebTests
             AllowAutoRedirect = false
         });
         Assert.AreEqual(HttpStatusCode.Unauthorized, (await anonymous.GetAsync("/api/profile")).StatusCode);
+        Assert.AreEqual(HttpStatusCode.Unauthorized, (await anonymous.GetAsync("/api/foods/generic")).StatusCode);
         using var member = await Login(1);
         member.DefaultRequestHeaders.Remove("X-CSRF-TOKEN");
         Assert.AreEqual(HttpStatusCode.BadRequest, (await member.PutAsJsonAsync("/api/weights/2026-10-25", new
         {
             kilograms = 76
         })).StatusCode);
+    }
+    [TestMethod]
+    public async Task GenericCatalogueReturnsTheSelectedSourceFood()
+    {
+        using var member = await Login(1);
+        var page = await member.GetFromJsonAsync<FoodSearchPage>("/api/foods/generic?search=chicken%20breast%20raw");
+        Assert.AreEqual("171077", page!.Foods.Single().SourceId);
+        Assert.AreEqual(120m, page.Foods.Single().Calories);
+        Assert.IsTrue(page.IsComplete);
     }
     [TestMethod]
     public async Task FiveRealLoginsAndTenConcurrentSessionsRemainIndependent()
