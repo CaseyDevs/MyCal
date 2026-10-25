@@ -8,6 +8,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\MyCal.Application\MyCal.Application.csproj" />
+      <EmbeddedResource Include="Nutrition/Data/generic-foods.json" LogicalName="MyCal.GenericFoods.json" />
     </ItemGroup>
 
     <ItemGroup>

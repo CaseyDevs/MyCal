@@ -71,6 +71,7 @@ public sealed class FoodInput
 
 public interface IFoodSearch
 {
+    IReadOnlyList<FoodItem> SearchGenericFoods(string query = "");
     Task<FoodSearchPage> SearchAsync(string query, CancellationToken ct = default, FoodSearchMarket market = FoodSearchMarket.UnitedKingdom);
     IAsyncEnumerable<FoodSearchPage> SearchProgressivelyAsync(string query, CancellationToken ct = default, FoodSearchMarket market = FoodSearchMarket.UnitedKingdom);
     Task<FoodItem?> BarcodeAsync(string barcode, CancellationToken ct = default);

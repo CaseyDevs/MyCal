@@ -4,6 +4,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using MyCal.Domain.Entity;
+using MyCal.Application.Calculators;
 using MyCal.Infrastructure.Nutrition;
 using MyCal.Shared.Tracking;
 
@@ -12,6 +13,93 @@ namespace MyCal.Tests;
 [TestClass]
 public class FoodSearchTests
 {
+    [TestMethod]
+    public void BuiltInCatalogueHasUniqueSourceIdsAndUsesGrams()
+    {
+        var foods = GenericFoods.Search();
+        Assert.AreEqual(63, foods.Count);
+        Assert.AreEqual(foods.Count, foods.Select(f => f.SourceId).Distinct().Count());
+        foreach (var food in foods)
+        {
+            NutritionMath.ValidateFood(food);
+            Assert.AreEqual("USDA FoodData Central", food.Source);
+            Assert.AreEqual(NutritionUnit.Grams, food.Unit);
+            Assert.AreEqual(100m, food.ReferenceQuantity);
+            Assert.IsFalse(food.RequiresBasisConfirmation);
+        }
+        Assert.AreEqual(NutritionUnit.Grams, GenericFoods.Search("milk").First().Unit,
+            "Milk values are per 100 g; do not infer density to offer millilitres.");
+    }
+
+    [TestMethod]
+    [DataRow("courgette", "169291")]
+    [DataRow("zucchini", "169291")]
+    [DataRow("aubergine", "169228")]
+    [DataRow("oatmeal dry", "173904")]
+    [DataRow("chicken breast raw", "171077")]
+    [DataRow("chicken breasts cooked", "171477")]
+    [DataRow("white rice cooked", "169757")]
+    [DataRow("white rice dry", "169756")]
+    [DataRow("minced beef raw", "171790")]
+    [DataRow("bananas", "173944")]
+    public void BuiltInSearchHandlesCommonNamesAndPreparation(string query, string id)
+        => Assert.AreEqual(id, GenericFoods.Search(query).Single().SourceId);
+
+    [TestMethod]
+    public void BuiltInPortionsMatchIndependentUsdaFixtures()
+    {
+        var rawChicken = GenericFoods.Search("chicken breast raw").Single();
+        var rawPortion = NutritionMath.Portion(rawChicken, 150);
+        Assert.AreEqual(180m, rawPortion.Calories);
+        Assert.AreEqual(33.75m, rawPortion.Protein);
+        Assert.AreEqual(3.93m, rawPortion.Fat);
+        Assert.IsFalse(rawPortion.CarbohydratesIncomplete);
+        Assert.AreEqual(165m, GenericFoods.Search("chicken breast cooked").Single().Calories);
+        Assert.AreEqual(365m, GenericFoods.Search("white rice dry").Single().Calories);
+        Assert.AreEqual(130m, GenericFoods.Search("white rice cooked").Single().Calories);
+        var oats = NutritionMath.Portion(GenericFoods.Search("oats dry").Single(), 50);
+        Assert.AreEqual(189.5m, oats.Calories);
+        Assert.AreEqual(28.8m, oats.Carbohydrates, "67.7 g USDA total carbohydrate minus 10.1 g fibre, scaled to 50 g.");
+        Assert.AreNotEqual(oats.Calories, oats.Protein * 4 + oats.Carbohydrates * 4 + oats.Fat * 9);
+    }
+
+    [TestMethod]
+    public async Task BuiltInFoodsArriveBeforeAnyNetworkRequest()
+    {
+        var calls = 0;
+        using var http = new Handler((_, _) => { Interlocked.Increment(ref calls); return Task.FromResult(Json(Usda)); });
+        var catalog = Catalog(http);
+        await using var stream = catalog.SearchProgressivelyAsync("chicken breast").GetAsyncEnumerator();
+        Assert.IsTrue(await stream.MoveNextAsync());
+        Assert.AreEqual(0, calls);
+        Assert.IsTrue(stream.Current.Foods.Any(f => f.SourceId == "171077"));
+        Assert.IsFalse(stream.Current.IsComplete);
+        Assert.AreEqual(1, catalog.SearchGenericFoods("banana").Count);
+        Assert.AreEqual(0, calls);
+    }
+
+    [TestMethod]
+    public async Task BuiltInFoodsRemainAvailableWhenBothProvidersFail()
+    {
+        using var http = new Handler((_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable)));
+        var result = await Catalog(http).SearchAsync("chicken breast raw");
+        Assert.AreEqual("171077", result.Foods.Single().SourceId);
+        Assert.AreEqual(120m, result.Foods.Single().Calories);
+        Assert.IsTrue(result.IsComplete);
+        Assert.IsNotNull(result.Notice);
+    }
+
+    [TestMethod]
+    public async Task LiveResultsDoNotDuplicateBundledSourceIds()
+    {
+        const string duplicate = """{"foods":[{"fdcId":171077,"description":"Chicken breast raw","foodNutrients":[{"nutrientId":1008,"unitName":"KCAL","value":120}]}]}""";
+        using var http = new Handler((request, _) => Task.FromResult(Json(
+            request.RequestUri!.Host == "world.openfoodfacts.org" ? "{\"products\":[]}" : duplicate)));
+        var result = await Catalog(http).SearchAsync("chicken breast raw");
+        Assert.AreEqual(1, result.Foods.Count);
+        Assert.AreEqual("171077", result.Foods[0].SourceId);
+    }
+
     [TestMethod]
     public void PlainChickenRanksAboveBreadedButExplicitPreparationWins()
     {
@@ -52,7 +140,7 @@ public class FoodSearchTests
             return Json(Usda);
         });
         var catalog = Catalog(http);
-        await using var stream = catalog.SearchProgressivelyAsync("chicken breast").GetAsyncEnumerator();
+        await using var stream = catalog.SearchProgressivelyAsync("catalog fixture").GetAsyncEnumerator();
         Assert.IsTrue(await stream.MoveNextAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(3)));
         await started.Task.WaitAsync(TimeSpan.FromSeconds(3));
         Assert.IsFalse(stream.Current.IsComplete);
@@ -74,13 +162,13 @@ public class FoodSearchTests
             return Task.FromResult(Json(request.RequestUri!.Host == "world.openfoodfacts.org" ? Off : Usda));
         });
         var catalog = Catalog(http);
-        await catalog.SearchAsync("chicken breast");
-        await catalog.SearchAsync(" CHICKEN   BREAST ");
+        await catalog.SearchAsync("catalog fixture");
+        await catalog.SearchAsync(" CATALOG   FIXTURE ");
         Assert.AreEqual(2, urls.Count);
         var uk = urls.Single(u => u.Contains("openfoodfacts"));
         StringAssert.Contains(uk, "tagtype_0=countries");
         StringAssert.Contains(uk, "tag_0=united-kingdom");
-        await catalog.SearchAsync("chicken breast", market: FoodSearchMarket.Worldwide);
+        await catalog.SearchAsync("catalog fixture", market: FoodSearchMarket.Worldwide);
         Assert.AreEqual(3, urls.Count, "Generic results should be reused across markets.");
         Assert.IsFalse(urls.Last().Contains("tag_0="));
     }
@@ -96,7 +184,7 @@ public class FoodSearchTests
             return Json(request.RequestUri!.Host == "world.openfoodfacts.org" ? Off : Usda);
         });
         var catalog = Catalog(http);
-        var results = await Task.WhenAll(Enumerable.Range(0, 10).Select(_ => catalog.SearchAsync("chicken breast")));
+        var results = await Task.WhenAll(Enumerable.Range(0, 10).Select(_ => catalog.SearchAsync("catalog fixture")));
         Assert.AreEqual(2, count);
         Assert.IsTrue(results.All(r => r.Foods.Count == 2 && r.IsComplete));
     }
@@ -106,7 +194,7 @@ public class FoodSearchTests
     {
         using var http = new Handler((request, _) => Task.FromResult(request.RequestUri!.Host == "world.openfoodfacts.org"
             ? new HttpResponseMessage(HttpStatusCode.ServiceUnavailable) : Json(Usda)));
-        var page = await Catalog(http).SearchAsync("chicken breast");
+        var page = await Catalog(http).SearchAsync("catalog fixture");
         Assert.AreEqual(1, page.Foods.Count);
         StringAssert.Contains(page.Notice!, "Packaged-food search is temporarily unavailable");
     }
@@ -127,7 +215,7 @@ public class FoodSearchTests
             return Json(Usda);
         });
         using var cancellation = new CancellationTokenSource();
-        var search = Catalog(http).SearchAsync("chicken breast", cancellation.Token);
+        var search = Catalog(http).SearchAsync("catalog fixture", cancellation.Token);
         await started.Task.WaitAsync(TimeSpan.FromSeconds(3));
         cancellation.Cancel();
         await Assert.ThrowsExactlyAsync<TaskCanceledException>(() => search);

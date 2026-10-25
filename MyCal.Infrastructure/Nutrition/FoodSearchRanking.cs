@@ -5,7 +5,7 @@ namespace MyCal.Infrastructure.Nutrition;
 
 public static partial class FoodSearchRanking
 {
-    private static readonly string[] Preparations = ["breaded", "battered", "fried", "deli", "rotisserie", "roll", "glazed", "seasoned"];
+    private static readonly string[] Preparations = ["breaded", "battered", "fried", "deli", "lunchmeat", "rotisserie", "roll", "glazed", "seasoned"];
 
     public static IReadOnlyList<FoodItem> Rank(string query, IEnumerable<FoodItem> foods)
     {
