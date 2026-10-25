@@ -1,0 +1,46 @@
+@page "/history"
+@attribute [Authorize]
+@inherits TrackerPage
+<PageTitle>History · MyCal</PageTitle>
+<header class="page-heading">
+<div>
+<p class="eyebrow">THE BIGGER PICTURE</p>
+<h1>Every day adds up.</h1>
+<p class="muted">Your diary, one day at a time.</p>
+</div>
+<a class="button secondary" href="/">Back to today →</a>
+</header>
+@if (Error is not null) { <div class="notice error" role="alert">@Error</div> }
+<section class="panel history-panel">
+<div class="section-heading">
+<h2>@_month.ToString("MMMM yyyy")</h2>
+<div class="date-switcher">
+<button class="icon-button" aria-label="Previous month" @onclick="() => Move(-1)">‹</button>
+<input type="month" aria-label="History month" value="@_month.ToString("yyyy-MM")" @onchange="ChangeMonth" />
+<button class="icon-button" aria-label="Next month" disabled="@(_month >= new DateOnly(_today.Year, _today.Month, 1))" @onclick="() => Move(1)">›</button>
+</div>
+</div>
+<div class="calendar-grid">@foreach (var label in new[] { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" }) { <span class="weekday">@label</span> }@for (var i = 0; i < ((int)_month.DayOfWeek + 6) % 7; i++) { <span>
+</span> }@foreach (var day in _days.OrderBy(x => x.Date)) { <a class="calendar-day @(day.Date == _today ? "is-today" : "") @(day.Status != DiaryStatus.Incomplete ? "is-complete" : "")" href="@($"/diary/{day.Date:yyyy-MM-dd}")">
+<span>@day.Date.Day</span>
+<strong>@(day.Calories > 0 ? day.Calories.ToString("N0") : day.Status == DiaryStatus.ConfirmedZero ? "0" : "—")</strong>
+<small>@(day.Status == DiaryStatus.Incomplete ? day.Calories > 0 ? "logging" : "not logged" : "complete")</small>
+</a> }
+</div>
+<p class="muted small">A blank day is unlogged, not zero calories. Open a day to view or correct it.</p>
+</section>
+<section class="panel history-panel">
+<h2>Daily details</h2>@foreach (var day in _days) { <a class="history-row" href="@($"/diary/{day.Date:yyyy-MM-dd}")">
+<span class="history-date">
+<strong>@day.Date.ToString("dd")</strong>
+<small>@day.Date.ToString("ddd")</small>
+</span>
+<span class="history-info">
+<strong>@day.Date.ToString("d MMMM")</strong>
+<small>@(day.Status == DiaryStatus.Incomplete ? "Incomplete" : day.Status == DiaryStatus.ConfirmedZero ? "Confirmed zero intake" : "Day complete")</small>
+</span>
+<span class="history-total">@day.Calories.ToString("N0")<small> / @(day.Target?.Calories.ToString("N0") ?? "—") kcal</small>
+</span>
+<Icon Name="arrow" />
+</a> }
+</section>
