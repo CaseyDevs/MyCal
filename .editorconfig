@@ -1,0 +1,11 @@
+root = true
+
+[*.{cs,razor,cshtml,css,js,mjs,json,yml}]
+charset = utf-8
+insert_final_newline = true
+indent_style = space
+
+[*.cs]
+indent_size = 4
+csharp_preserve_single_line_statements = false
+csharp_preserve_single_line_blocks = true
