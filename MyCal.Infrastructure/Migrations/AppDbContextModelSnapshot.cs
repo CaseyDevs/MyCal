@@ -302,6 +302,9 @@ namespace MyCal.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("Diet")
+                        .HasColumnType("integer");
+
                     b.Property<DateOnly>("EffectiveFrom")
                         .HasColumnType("date");
 
@@ -316,6 +319,12 @@ namespace MyCal.Infrastructure.Migrations
 
                     b.Property<decimal>("Protein")
                         .HasColumnType("numeric");
+
+                    b.Property<int>("ProteinPreference")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Training")
+                        .HasColumnType("integer");
 
                     b.Property<int>("UserId")
                         .HasColumnType("integer");

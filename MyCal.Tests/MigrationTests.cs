@@ -9,6 +9,33 @@ namespace MyCal.Tests;
 public sealed class MigrationTests
 {
     [TestMethod]
+    public async Task DietUpgradeKeepsExistingTargetDatesAndAmounts()
+    {
+        await using var store = await TestStore.CreateAsync(migrate: false);
+        await using var db = await store.Factory.CreateDbContextAsync();
+        await db.GetService<IMigrator>().MigrateAsync("20261025105336_TrackingBeta");
+        await db.Database.ExecuteSqlRawAsync("""
+            INSERT INTO "Users" ("Id","IdentityUserId","Name","Email","HeightInCm","WeightInKg","WeightGoal","Age","Gender","ActivityLevel","MaintenanceCalories","GoalType","OnboardingStatus","CreatedAt")
+            VALUES (9002,'existing-diet','Existing','existing@example.com',180,75,70,30,1,1,2500,1,2,NOW());
+            INSERT INTO "Targets" ("UserId","EffectiveFrom","Calories","Protein","Carbohydrates","Fat","MaintenanceEstimate","Goal","CreatedAt")
+            VALUES (9002,'2026-10-24',2000,140,180,80,2500,1,NOW()),
+                   (9002,'2026-10-25',2100,150,240,60,2500,1,NOW());
+            """);
+        await db.Database.MigrateAsync();
+        var yesterday = (await store.Tracker.DiaryAsync("existing-diet", new(2026, 10, 24))).Target!;
+        var today = (await store.Tracker.DiaryAsync("existing-diet", new(2026, 10, 25))).Target!;
+        Assert.AreEqual(2000m, yesterday.Calories);
+        Assert.AreEqual(140m, yesterday.Protein);
+        Assert.AreEqual(180m, yesterday.Carbohydrates);
+        Assert.AreEqual(80m, yesterday.Fat);
+        Assert.AreEqual(2100m, today.Calories);
+        Assert.AreEqual(150m, today.Protein);
+        Assert.AreEqual(240m, today.Carbohydrates);
+        Assert.AreEqual(60m, today.Fat);
+        Assert.AreEqual(MyCal.Domain.Entity.DietPreference.Custom, today.Diet);
+    }
+
+    [TestMethod]
     public async Task UpgradePreservesAccountsPasskeysAndFreezesOldNutrition()
     {
         await using var store = await TestStore.CreateAsync(migrate: false);

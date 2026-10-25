@@ -12,7 +12,9 @@ public sealed record NutritionTotals(decimal Calories, decimal Protein, decimal 
     decimal Fat, bool ProteinIncomplete, bool CarbohydratesIncomplete, bool FatIncomplete);
 public sealed record DiaryEntry(int Id, Meal Meal, decimal Amount, FoodItem Food, NutritionTotals Totals);
 public sealed record Target(int Id, DateOnly EffectiveFrom, decimal Calories, decimal Protein,
-    decimal Carbohydrates, decimal Fat, decimal MaintenanceEstimate, GoalType Goal);
+    decimal Carbohydrates, decimal Fat, decimal MaintenanceEstimate, GoalType Goal,
+    TrainingType Training = TrainingType.GeneralActivity, ProteinPreference ProteinPreference = ProteinPreference.Standard,
+    DietPreference Diet = DietPreference.Custom);
 public sealed record DiaryDay(DateOnly Date, DiaryStatus Status, IReadOnlyList<DiaryEntry> Entries,
     NutritionTotals Totals, Target? Target);
 public sealed record DaySummary(DateOnly Date, DiaryStatus Status, decimal Calories, Target? Target);
@@ -43,6 +45,9 @@ public sealed class TargetInput
     [Range(0, 1500)] public decimal Carbohydrates { get; set; } = 245;
     [Range(0, 500)] public decimal Fat { get; set; } = 60;
     public GoalType Goal { get; set; } = GoalType.LoseWeight;
+    public TrainingType Training { get; set; }
+    public ProteinPreference ProteinPreference { get; set; }
+    public DietPreference Diet { get; set; }
 }
 
 public sealed class FoodInput
