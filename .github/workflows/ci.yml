@@ -39,3 +39,62 @@ jobs:
           path: .local/test-results/*.trx
           retention-days: 7
           include-hidden-files: true
+  browsers:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: mycal
+          POSTGRES_PASSWORD: local-development-only
+          POSTGRES_DB: mycal
+        ports: ["55432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U mycal -d mycal"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: "10.0.300"
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: MyCal.Web/ClientAssets/package-lock.json
+      - run: dotnet build MyCal.Web/MyCal.Web.csproj -m:1
+      - run: npm ci
+        working-directory: MyCal.Web/ClientAssets
+      - name: Verify the checked-in scanner bundle
+        run: |
+          npm run bundle
+          git diff --exit-code -- ../wwwroot/vendor
+        working-directory: MyCal.Web/ClientAssets
+      - run: npx playwright install --with-deps chromium webkit
+        working-directory: MyCal.Web/ClientAssets
+      - name: Start the local application
+        env:
+          ASPNETCORE_ENVIRONMENT: Development
+        run: |
+          (cd MyCal.Web && dotnet bin/Debug/net10.0/MyCal.Web.dll --migrate)
+          python3 scripts/create-local-admin.py
+          (cd MyCal.Web && dotnet bin/Debug/net10.0/MyCal.Web.dll --urls http://localhost:5099) > .local/web-test.log 2>&1 &
+          for attempt in {1..30}; do
+            if curl --fail --silent http://localhost:5099/account/login > /dev/null; then break; fi
+            sleep 1
+          done
+          curl --fail --silent http://localhost:5099/account/login > /dev/null
+      - name: Verify desktop and mobile browser journeys
+        run: npx playwright test
+        working-directory: MyCal.Web/ClientAssets
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: browser-test-results
+          path: |
+            .local/browser-results
+            .local/screenshots
+            .local/web-test.log
+          retention-days: 7
+          include-hidden-files: true
