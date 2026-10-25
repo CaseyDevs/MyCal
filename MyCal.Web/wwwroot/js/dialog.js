@@ -34,6 +34,11 @@ export function open(selector, callback) {
     const all = controls();
     const first = all[0],
       last = all.at(-1);
+    if (!dialog.contains(document.activeElement)) {
+      event.preventDefault();
+      (event.shiftKey ? last : first)?.focus();
+      return;
+    }
     if (event.shiftKey && document.activeElement === first) {
       event.preventDefault();
       last?.focus();
@@ -42,10 +47,10 @@ export function open(selector, callback) {
       first?.focus();
     }
   };
-  dialog.addEventListener("keydown", keydown);
+  document.addEventListener("keydown", keydown);
   controls()[0]?.focus();
   cleanup = () => {
-    dialog.removeEventListener("keydown", keydown);
+    document.removeEventListener("keydown", keydown);
     inertStates.forEach(([element, value]) => {
       element.inert = value;
     });
