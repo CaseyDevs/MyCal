@@ -6,6 +6,7 @@ using MyCal.Domain.Enum;
 using MyCal.Shared.Tracking;
 using MyCal.Web.Components.Tracking;
 using System.Globalization;
+using System.ComponentModel.DataAnnotations;
 
 namespace MyCal.Web.Components.Tracking;
 
@@ -18,6 +19,9 @@ public partial class FoodComposer
     public EventCallback OnClose { get; set; }
     private string _tab = "Recents", _query = "", _barcode = "";
     private string? _notice;
+    private FoodSearchMarket _market = FoodSearchMarket.UnitedKingdom;
+    private CancellationTokenSource? _searchCancellation;
+    private bool _searching;
     private List<FoodItem> _foods = [];
     private FoodItem? _selected;
     private FoodInput _custom = new();
@@ -47,6 +51,7 @@ public partial class FoodComposer
     }
     private async Task ChangeTab(string tab)
     {
+        CancelSearch();
         await StopScanner();
         _tab = tab;
         _selected = null;
@@ -56,7 +61,50 @@ public partial class FoodComposer
         if (tab is "Recents" or "Favourites")
             await Run(async () => _foods = (await Tracker.SavedFoodsAsync(IdentityId, tab == "Favourites")).ToList());
     }
-    private Task Search() => Run(async () => { _selected = null; var result = await FoodSearch.SearchAsync(_query); _foods = result.Foods.ToList(); _notice = result.Notice; if (_foods.Count == 0) _notice = (_notice + " No matching foods found. Try another term or create a custom food.").Trim(); });
+    private Task ChangeMarket() => _query.Trim().Length >= 2 ? Search() : Task.CompletedTask;
+    private async Task Search()
+    {
+        CancelSearch();
+        var cancellation = new CancellationTokenSource();
+        _searchCancellation = cancellation;
+        _searching = true;
+        _selected = null;
+        _foods = [];
+        _notice = null;
+        Error = null;
+        try
+        {
+            IdentityId = await Account.IdAsync();
+            await foreach (var page in FoodSearch.SearchProgressivelyAsync(_query, cancellation.Token, _market))
+            {
+                if (_searchCancellation != cancellation)
+                    return;
+                _foods = page.Foods.ToList();
+                _notice = page.Notice;
+                if (page.IsComplete && _foods.Count == 0)
+                    _notice = (_notice + " No matching foods found. Try worldwide packaged foods, another term, or create a custom food.").Trim();
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
+        catch (UnauthorizedAccessException) { Navigation.NavigateTo("/account/login", forceLoad: true); }
+        catch (ValidationException e) { if (_searchCancellation == cancellation) Error = e.Message; }
+        finally
+        {
+            if (_searchCancellation == cancellation)
+            {
+                _searching = false;
+                _searchCancellation = null;
+            }
+            cancellation.Dispose();
+        }
+    }
+    private void CancelSearch()
+    {
+        _searchCancellation?.Cancel();
+        _searchCancellation = null;
+        _searching = false;
+    }
     private void Select(FoodItem food)
     {
         _selected = food;
@@ -106,11 +154,13 @@ public partial class FoodComposer
     {
         if (Busy)
             return;
+        CancelSearch();
         await StopScanner();
         await OnClose.InvokeAsync();
     }
     public async ValueTask DisposeAsync()
     {
+        CancelSearch();
         if (_dialog is not null)
         {
             try
